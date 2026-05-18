@@ -7,6 +7,22 @@ import { revalidatePath } from 'next/cache'
 
 type RunAnalysisResult = { success: true; analysisId: string } | { success: false; error: string }
 
+function parseAnthropicError(raw: string): string {
+  // Anthropic SDK errors look like: "400 {\"type\":\"error\",\"error\":{\"message\":\"...\"}}"
+  const jsonStart = raw.indexOf('{')
+  if (jsonStart !== -1) {
+    try {
+      const parsed = JSON.parse(raw.slice(jsonStart)) as {
+        error?: { message?: string }
+      }
+      if (parsed?.error?.message) return parsed.error.message
+    } catch {
+      // fall through to raw
+    }
+  }
+  return raw
+}
+
 export async function runProjectAnalysis(
   projectId: string,
   useDeepModel = false
@@ -37,32 +53,58 @@ export async function runProjectAnalysis(
     // Fetch uploads and their content (CSV text only)
     const { data: uploads } = await supabase
       .from('uploads')
-      .select('file_name, file_type, storage_path')
+      .select('file_name, file_type, mime_type, storage_path')
       .eq('project_id', projectId)
+
+    const BINARY_MIME_PREFIXES = ['video/', 'audio/']
+    const isBinary = (mime: string) => BINARY_MIME_PREFIXES.some(p => mime.startsWith(p))
 
     const uploadsWithContent = await Promise.all(
       (uploads ?? []).map(async upload => {
-        if (upload.file_type !== 'csv') {
-          return { file_name: upload.file_name, file_type: upload.file_type as 'csv' | 'screenshot' }
+        if (upload.file_type === 'screenshot') {
+          return { file_name: upload.file_name, file_type: 'screenshot' as const }
         }
+        if (upload.file_type === 'user_research' && isBinary(upload.mime_type)) {
+          return { file_name: upload.file_name, file_type: 'user_research' as const }
+        }
+        // Read text content for csv and text-based user_research
         try {
           const { data } = await supabase.storage
             .from('uploads')
             .download(upload.storage_path)
           const text = data ? await data.text() : undefined
-          // Truncate to 50K chars to fit context
           return {
             file_name: upload.file_name,
-            file_type: 'csv' as const,
+            file_type: upload.file_type as 'csv' | 'user_research',
             content: text?.slice(0, 50_000),
           }
         } catch {
-          return { file_name: upload.file_name, file_type: 'csv' as const }
+          return {
+            file_name: upload.file_name,
+            file_type: upload.file_type as 'csv' | 'user_research',
+          }
         }
       })
     )
 
-    const output = await runAnalysis(project, uploadsWithContent, useDeepModel)
+    // Build user research summary: text content + note binary files
+    const researchUploads = uploadsWithContent.filter(u => u.file_type === 'user_research')
+    const binaryCount = (uploads ?? []).filter(
+      u => u.file_type === 'user_research' && isBinary(u.mime_type)
+    ).length
+
+    let userResearchSummary: string | undefined
+    if (researchUploads.length > 0) {
+      const parts: string[] = researchUploads
+        .filter(u => u.content)
+        .map(u => `### ${u.file_name}\n${u.content}`)
+      if (binaryCount > 0) {
+        parts.push(`(${binaryCount} video/audio file${binaryCount > 1 ? 's' : ''} available — content not extracted)`)
+      }
+      if (parts.length > 0) userResearchSummary = parts.join('\n\n')
+    }
+
+    const output = await runAnalysis(project, uploadsWithContent, useDeepModel, userResearchSummary)
 
     // Store recommendations
     const rows = output.recommendations.map(r => ({
@@ -90,7 +132,8 @@ export async function runProjectAnalysis(
 
     return { success: true, analysisId: analysis.id }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error'
+    const raw = err instanceof Error ? err.message : 'Unknown error'
+    const msg = parseAnthropicError(raw)
     await supabase
       .from('analyses')
       .update({ status: 'failed', error_message: msg })

@@ -8,8 +8,8 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export type UploadInput = {
   file_name: string
-  file_type: 'csv' | 'screenshot'
-  content?: string // text content for CSVs only
+  file_type: 'csv' | 'screenshot' | 'user_research'
+  content?: string // text content for CSVs and readable user_research files
 }
 
 function buildProjectContextBlock(project: Project): string {
@@ -57,6 +57,7 @@ export async function runAnalysis(
   project: Project,
   uploads: UploadInput[],
   useDeepModel = false,
+  userResearchSummary?: string,
 ): Promise<AnalysisOutput> {
   const model = useDeepModel ? 'claude-opus-4-7' : 'claude-sonnet-4-6'
 
@@ -82,6 +83,14 @@ export async function runAnalysis(
     userContent.push({
       type: 'text',
       text: csvText,
+      cache_control: { type: 'ephemeral' },
+    })
+  }
+
+  if (userResearchSummary) {
+    userContent.push({
+      type: 'text',
+      text: `## User Research\n${userResearchSummary}`,
       cache_control: { type: 'ephemeral' },
     })
   }

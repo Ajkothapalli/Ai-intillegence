@@ -1,20 +1,38 @@
 import { RecommendationCard } from './RecommendationCard'
 import type { DbRecommendation } from '../types'
 
-export function RecommendationList({ recommendations }: { recommendations: DbRecommendation[] }) {
+type Props = {
+  recommendations: DbRecommendation[]
+  summary?: string | null
+}
+
+export function RecommendationList({ recommendations, summary }: Props) {
   if (recommendations.length === 0) {
     return (
-      <div className="text-center py-16 bg-white rounded-xl border border-dashed border-[var(--border)]">
+      <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-dashed border-[var(--border)]">
         <p className="text-[var(--foreground-muted)] text-sm">No recommendations yet — run an analysis first.</p>
       </div>
     )
   }
 
+  const sorted = [...recommendations].sort((a, b) => a.priority - b.priority)
+
   return (
-    <div className="space-y-4">
-      {recommendations.map(rec => (
-        <RecommendationCard key={rec.id} rec={rec} />
-      ))}
+    <div className="space-y-6">
+      {summary && (
+        <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] px-6 py-4">
+          <p className="text-xs font-semibold text-[var(--foreground-subtle)] uppercase tracking-wide mb-1">
+            Summary
+          </p>
+          <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">{summary}</p>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {sorted.map(rec => (
+          <RecommendationCard key={rec.id} rec={rec} />
+        ))}
+      </div>
     </div>
   )
 }

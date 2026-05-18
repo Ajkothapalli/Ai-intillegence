@@ -17,7 +17,7 @@ export type Upload = {
   project_id: string
   user_id: string
   file_name: string
-  file_type: 'csv' | 'screenshot'
+  file_type: 'csv' | 'screenshot' | 'user_research'
   mime_type: string
   file_size_bytes: number
   storage_path: string

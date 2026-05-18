@@ -58,14 +58,25 @@ export default async function AnalysisPage({ params }: Props) {
                 </p>
               )}
               {analysis.error_message && (
-                <div className="mt-2">
-                  <Alert variant="destructive">{analysis.error_message}</Alert>
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-sm font-medium text-red-700">Analysis failed</p>
+                  <p className="text-sm text-red-600 mt-0.5">{analysis.error_message}</p>
+                  {analysis.error_message.toLowerCase().includes('credit') && (
+                    <a
+                      href="https://console.anthropic.com/settings/billing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-xs font-medium text-red-700 underline underline-offset-2 hover:text-red-900"
+                    >
+                      Add credits at console.anthropic.com →
+                    </a>
+                  )}
                 </div>
               )}
               {status === 'completed' && (
                 <Link
                   href={`/projects/${id}/recommendations`}
-                  className="mt-3 inline-block text-sm text-[var(--forest-400)] hover:underline font-medium"
+                  className="mt-3 inline-block text-sm text-[var(--link)] hover:underline font-medium"
                 >
                   View recommendations →
                 </Link>

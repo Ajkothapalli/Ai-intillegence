@@ -271,6 +271,10 @@
   --brand-subtle:        var(--forest-50);    /* #effbfb — pale teal wash */
   --brand-foreground:    #09090b;
 
+  /* Link — primary color for all inline text links */
+  --link:                var(--primary);      /* #196262 deep teal */
+  --link-hover:          var(--primary-hover);/* #1f7a7a */
+
   /* Accent = ember orange */
   --accent:              var(--ember-500);    /* #ed8020 */
   --accent-hover:        var(--ember-600);    /* #cf6214 */
@@ -687,6 +691,31 @@
   }
   .motion-spring:hover  { transform: scale(1.06); }
   .motion-spring:active { transform: scale(0.95); transition-duration: var(--duration-instant); }
+
+  /* Shake — auth error */
+  @keyframes shake {
+    0%,100% { transform: translateX(0) rotate(0deg); }
+    15%     { transform: translateX(-7px) rotate(-3deg); }
+    30%     { transform: translateX(7px)  rotate(3deg); }
+    45%     { transform: translateX(-5px) rotate(-2deg); }
+    60%     { transform: translateX(5px)  rotate(2deg); }
+    75%     { transform: translateX(-3px) rotate(-1deg); }
+    90%     { transform: translateX(3px)  rotate(1deg); }
+  }
+  .animate-shake {
+    animation: shake 0.65s var(--ease-default) both;
+  }
+
+  /* Bounce in — auth success */
+  @keyframes bounce-in {
+    0%   { transform: scale(0.85); }
+    55%  { transform: scale(1.12); }
+    75%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  .animate-bounce-in {
+    animation: bounce-in 0.5s var(--ease-spring) both;
+  }
 
   /* Fade in — for alerts, toasts, overlays, dropdowns entering */
   @keyframes fade-in {

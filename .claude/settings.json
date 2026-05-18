@@ -54,7 +54,16 @@
       "Bash(~/bin/supabase --version)",
       "Bash(~/bin/supabase login *)",
       "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(xargs ls *)",
+      "Bash(curl -v http://localhost:3000)",
+      "Bash(curl -s -L http://localhost:3000/login)",
+      "Bash(curl -s http://localhost:3000/login)",
+      "Bash(node -e \"require\\('recharts'\\); console.log\\('ok'\\)\")",
+      "Bash(kill 34739)",
+      "Bash(node node_modules/next/dist/bin/next lint --help)",
+      "Bash(node node_modules/eslint/bin/eslint.js src --ext .ts,.tsx --max-warnings 0)"
     ],
     "additionalDirectories": [
       "/Users/ajaykothapalli/AI Intillegence/src/app/(app)/projects/[id]"

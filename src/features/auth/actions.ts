@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { signUpSchema, signInSchema } from './schema'
-import type { AuthActionResult } from './types'
+import type { AuthActionResult, AuthField } from './types'
 
 export async function signUp(_prev: AuthActionResult | null, formData: FormData): Promise<AuthActionResult> {
   const raw = {
@@ -14,20 +14,19 @@ export async function signUp(_prev: AuthActionResult | null, formData: FormData)
 
   const parsed = signUpSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    const issue = parsed.error.issues[0]
+    return { success: false, error: issue.message, field: (issue.path[0] as AuthField) ?? 'form' }
   }
 
   const supabase = await createServerClient()
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: {
-      data: { full_name: parsed.data.fullName },
-    },
+    options: { data: { full_name: parsed.data.fullName } },
   })
 
   if (error) {
-    return { success: false, error: error.message }
+    return { success: false, error: error.message, field: 'form' }
   }
 
   redirect('/dashboard')
@@ -41,7 +40,8 @@ export async function signIn(_prev: AuthActionResult | null, formData: FormData)
 
   const parsed = signInSchema.safeParse(raw)
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
+    const issue = parsed.error.issues[0]
+    return { success: false, error: issue.message, field: (issue.path[0] as AuthField) ?? 'form' }
   }
 
   const supabase = await createServerClient()
@@ -51,7 +51,7 @@ export async function signIn(_prev: AuthActionResult | null, formData: FormData)
   })
 
   if (error) {
-    return { success: false, error: error.message }
+    return { success: false, error: 'Incorrect email or password.', field: 'password' }
   }
 
   redirect('/dashboard')

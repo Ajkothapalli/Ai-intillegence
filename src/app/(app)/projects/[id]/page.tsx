@@ -1,14 +1,30 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
+import { getAnalysisByProject } from '@/features/analysis/queries'
 import { Badge } from '@/components/ui/badge'
 
 type Props = { params: Promise<{ id: string }> }
 
+const statusLabel: Record<string, string> = {
+  pending: 'Pending',
+  running: 'Running…',
+  completed: 'Completed',
+  failed: 'Failed',
+}
+const statusVariant: Record<string, 'pending' | 'running' | 'completed' | 'failed'> = {
+  pending: 'pending',
+  running: 'running',
+  completed: 'completed',
+  failed: 'failed',
+}
+
 export default async function ProjectPage({ params }: Props) {
   const { id } = await params
-  const project = await getProject(id)
+  const [project, analysis] = await Promise.all([getProject(id), getAnalysisByProject(id)])
   if (!project) notFound()
+
+  const status = analysis?.status ?? null
 
   return (
     <main className="min-h-screen bg-background">
@@ -52,7 +68,14 @@ export default async function ProjectPage({ params }: Props) {
             className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6 motion-lift hover:border-[var(--primary)] hover:shadow-[var(--shadow-md)] active:translate-y-0"
           >
             <div className="text-2xl mb-2">🤖</div>
-            <h3 className="font-semibold text-foreground text-sm">Run analysis</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold text-foreground text-sm">Run analysis</h3>
+              {status && (
+                <Badge variant={statusVariant[status] ?? 'pending'} className="text-[10px] px-1.5 py-0">
+                  {statusLabel[status] ?? status}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-[var(--foreground-muted)] mt-1">AI generates experiment recommendations</p>
           </Link>
 
@@ -65,6 +88,25 @@ export default async function ProjectPage({ params }: Props) {
             <p className="text-xs text-[var(--foreground-muted)] mt-1">View prioritized experiment hypotheses</p>
           </Link>
         </div>
+
+        {status === 'completed' && (
+          <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Analysis complete</p>
+              {analysis?.completed_at && (
+                <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">
+                  {new Date(analysis.completed_at).toLocaleString()} · {analysis.model}
+                </p>
+              )}
+            </div>
+            <Link
+              href={`/projects/${id}/recommendations`}
+              className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-all hover:bg-[var(--primary-hover)]"
+            >
+              View recommendations →
+            </Link>
+          </div>
+        )}
 
         {project.business_goal && (
           <div className="bg-[var(--surface)] rounded-xl border border-[var(--border)] p-6">

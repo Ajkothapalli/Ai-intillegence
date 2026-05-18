@@ -9,8 +9,12 @@ import {
   uploadFileSchema,
   ALLOWED_CSV_MIME_TYPES,
   ALLOWED_SCREENSHOT_MIME_TYPES,
+  ALLOWED_USER_RESEARCH_MIME_TYPES,
+  MAX_FILE_SIZE_BYTES,
+  MAX_USER_RESEARCH_FILE_SIZE_BYTES,
   MAX_CSV_COUNT,
   MAX_SCREENSHOT_COUNT,
+  MAX_USER_RESEARCH_COUNT,
 } from './schema'
 
 export type ProjectActionResult = { success: true; id: string } | { success: false; error: string }
@@ -74,18 +78,27 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
   const mimeType = file.type
   const csvMimes: readonly string[] = ALLOWED_CSV_MIME_TYPES
   const screenshotMimes: readonly string[] = ALLOWED_SCREENSHOT_MIME_TYPES
+  const researchMimes: readonly string[] = ALLOWED_USER_RESEARCH_MIME_TYPES
 
-  const isCSV = csvMimes.includes(mimeType) || file.name.toLowerCase().endsWith('.csv')
+  const isCSV        = csvMimes.includes(mimeType) || file.name.toLowerCase().endsWith('.csv')
   const isScreenshot = screenshotMimes.includes(mimeType)
+  const isResearch   = !isCSV && !isScreenshot && researchMimes.includes(mimeType)
 
-  if (!isCSV && !isScreenshot) {
+  if (!isCSV && !isScreenshot && !isResearch) {
     return {
       success: false,
-      error: 'Unsupported file type. Allowed: CSV (.csv), PNG, JPEG, WebP',
+      error: 'Unsupported file type. Allowed: CSV, PNG, JPEG, WebP, PDF, TXT, MP4, MOV, MP3, M4A',
     }
   }
 
-  const fileType = isCSV ? 'csv' : 'screenshot'
+  const fileType = isCSV ? 'csv' : isScreenshot ? 'screenshot' : 'user_research'
+
+  // Per-type size limits
+  const sizeLimit = fileType === 'user_research' ? MAX_USER_RESEARCH_FILE_SIZE_BYTES : MAX_FILE_SIZE_BYTES
+  if (file.size > sizeLimit) {
+    const mb = sizeLimit / (1024 * 1024)
+    return { success: false, error: `File must be under ${mb} MB` }
+  }
 
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -107,6 +120,9 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
   if (fileType === 'screenshot' && current >= MAX_SCREENSHOT_COUNT) {
     return { success: false, error: `Maximum ${MAX_SCREENSHOT_COUNT} screenshots per project.` }
   }
+  if (fileType === 'user_research' && current >= MAX_USER_RESEARCH_COUNT) {
+    return { success: false, error: `Maximum ${MAX_USER_RESEARCH_COUNT} user research files per project.` }
+  }
 
   // Storage path: {userId}/{projectId}/{timestamp}-{filename}
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -116,7 +132,10 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
     .from(STORAGE_BUCKET)
     .upload(storagePath, file, { contentType: mimeType, upsert: false })
 
-  if (storageError) return { success: false, error: storageError.message }
+  if (storageError) {
+    console.error('[uploadFile] storage error:', storageError)
+    return { success: false, error: storageError.message }
+  }
 
   const { error: dbError } = await supabase.from('uploads').insert({
     project_id: projectId,
@@ -129,6 +148,7 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
   })
 
   if (dbError) {
+    console.error('[uploadFile] db error:', dbError)
     await supabase.storage.from(STORAGE_BUCKET).remove([storagePath])
     return { success: false, error: dbError.message }
   }

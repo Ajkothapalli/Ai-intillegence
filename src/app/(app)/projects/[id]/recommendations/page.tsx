@@ -1,20 +1,22 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
-import { getProjectRecommendations, getAnalysisByProject } from '@/features/analysis/queries'
+import { getAnalysisByProject, getRecommendationsByAnalysis } from '@/features/analysis/queries'
 import { RecommendationList } from '@/features/analysis/components/RecommendationList'
+import { ConfidenceChart } from '@/features/analysis/components/ConfidenceChart'
 import { Alert } from '@/components/ui/alert'
 
 type Props = { params: Promise<{ id: string }> }
 
 export default async function RecommendationsPage({ params }: Props) {
   const { id } = await params
-  const [project, analysis, recommendations] = await Promise.all([
+  const [project, analysis] = await Promise.all([
     getProject(id),
     getAnalysisByProject(id),
-    getProjectRecommendations(id),
   ])
   if (!project) notFound()
+
+  const recommendations = analysis ? await getRecommendationsByAnalysis(analysis.id) : []
 
   return (
     <main className="min-h-screen bg-background">
@@ -22,20 +24,19 @@ export default async function RecommendationsPage({ params }: Props) {
         <Link href={`/projects/${id}`} className="text-sm text-[var(--foreground-muted)] hover:text-foreground transition-colors">
           ← {project.name}
         </Link>
-        <Link
-          href={`/projects/${id}/analysis`}
-          className="text-sm text-[var(--forest-400)] hover:underline font-medium"
-        >
+        <Link href={`/projects/${id}/analysis`} className="text-sm text-[var(--primary)] hover:underline font-medium">
           Run new analysis
         </Link>
       </header>
 
-      <div className="max-w-3xl mx-auto px-8 py-10 space-y-6">
+      <div className="max-w-4xl mx-auto px-8 py-10 space-y-8">
+
+        {/* Page heading */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Recommendations</h1>
           <p className="text-sm text-[var(--foreground-muted)] mt-1">
             {recommendations.length > 0
-              ? `${recommendations.length} prioritized experiment hypotheses, ranked by impact and evidence strength.`
+              ? `${recommendations.length} prioritized experiment ${recommendations.length === 1 ? 'hypothesis' : 'hypotheses'}, ranked by impact and evidence strength.`
               : 'AI-generated experiment recommendations will appear here after analysis.'}
           </p>
           {analysis?.completed_at && (
@@ -56,13 +57,16 @@ export default async function RecommendationsPage({ params }: Props) {
 
         {analysis?.status === 'failed' && (
           <Alert variant="destructive" title="Analysis failed">
-            {analysis.error_message}
+            {analysis.error_message ?? 'An unknown error occurred.'}
             <div className="mt-2">
-              <Link href={`/projects/${id}/analysis`} className="text-sm underline font-medium">
-                Try again →
-              </Link>
+              <Link href={`/projects/${id}/analysis`} className="text-sm underline font-medium">Try again →</Link>
             </div>
           </Alert>
+        )}
+
+        {/* Confidence chart — only when we have data */}
+        {recommendations.length > 0 && (
+          <ConfidenceChart recommendations={recommendations} />
         )}
 
         <RecommendationList recommendations={recommendations} />
