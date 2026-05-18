@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
-import { getProjectRecommendations, getLatestAnalysis } from '@/features/analysis/queries'
+import { getProjectRecommendations, getAnalysisByProject } from '@/features/analysis/queries'
 import { RecommendationList } from '@/features/analysis/components/RecommendationList'
 import { Alert } from '@/components/ui/alert'
 
@@ -11,7 +11,7 @@ export default async function RecommendationsPage({ params }: Props) {
   const { id } = await params
   const [project, analysis, recommendations] = await Promise.all([
     getProject(id),
-    getLatestAnalysis(id),
+    getAnalysisByProject(id),
     getProjectRecommendations(id),
   ])
   if (!project) notFound()

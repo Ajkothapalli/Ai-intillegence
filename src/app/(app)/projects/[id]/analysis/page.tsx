@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
-import { getLatestAnalysis } from '@/features/analysis/queries'
+import { getAnalysisByProject } from '@/features/analysis/queries'
 import { RunAnalysisButton } from './run-analysis-button'
 import { Badge } from '@/components/ui/badge'
 import { Alert } from '@/components/ui/alert'
@@ -10,7 +10,7 @@ type Props = { params: Promise<{ id: string }> }
 
 export default async function AnalysisPage({ params }: Props) {
   const { id } = await params
-  const [project, analysis] = await Promise.all([getProject(id), getLatestAnalysis(id)])
+  const [project, analysis] = await Promise.all([getProject(id), getAnalysisByProject(id)])
   if (!project) notFound()
 
   const status = analysis?.status ?? null

@@ -47,7 +47,7 @@ export async function runProjectAnalysis(
         }
         try {
           const { data } = await supabase.storage
-            .from('project-uploads')
+            .from('uploads')
             .download(upload.storage_path)
           const text = data ? await data.text() : undefined
           // Truncate to 50K chars to fit context

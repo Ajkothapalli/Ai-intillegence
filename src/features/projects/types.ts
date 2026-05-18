@@ -11,3 +11,16 @@ export type Project = {
   created_at: string
   updated_at: string
 }
+
+export type Upload = {
+  id: string
+  project_id: string
+  user_id: string
+  file_name: string
+  file_type: 'csv' | 'screenshot'
+  mime_type: string
+  file_size_bytes: number
+  storage_path: string
+  created_at: string
+  updated_at: string
+}

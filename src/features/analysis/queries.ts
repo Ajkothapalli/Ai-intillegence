@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import type { Analysis, DbRecommendation } from './types'
 
-export async function getLatestAnalysis(projectId: string): Promise<Analysis | null> {
+export async function getAnalysisByProject(projectId: string): Promise<Analysis | null> {
   const supabase = await createServerClient()
   const { data, error } = await supabase
     .from('analyses')
@@ -15,7 +15,7 @@ export async function getLatestAnalysis(projectId: string): Promise<Analysis | n
   return data
 }
 
-export async function getRecommendations(analysisId: string): Promise<DbRecommendation[]> {
+export async function getRecommendationsByAnalysis(analysisId: string): Promise<DbRecommendation[]> {
   const supabase = await createServerClient()
   const { data, error } = await supabase
     .from('recommendations')

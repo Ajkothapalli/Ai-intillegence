@@ -1,10 +1,24 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
-import { createProjectSchema, type CreateProjectInput } from './schema'
+import {
+  createProjectSchema,
+  type CreateProjectInput,
+  uploadFileSchema,
+  ALLOWED_CSV_MIME_TYPES,
+  ALLOWED_SCREENSHOT_MIME_TYPES,
+  MAX_CSV_COUNT,
+  MAX_SCREENSHOT_COUNT,
+} from './schema'
 
 export type ProjectActionResult = { success: true; id: string } | { success: false; error: string }
+export type UploadResult = { success: true } | { success: false; error: string }
+
+const STORAGE_BUCKET = 'uploads'
+
+// ── Project ────────────────────────────────────────────────
 
 export async function createProject(data: CreateProjectInput): Promise<ProjectActionResult> {
   const parsed = createProjectSchema.safeParse(data)
@@ -38,4 +52,110 @@ export async function createProject(data: CreateProjectInput): Promise<ProjectAc
   if (error) return { success: false, error: error.message }
 
   redirect(`/projects/${row.id}`)
+}
+
+// ── Uploads ────────────────────────────────────────────────
+
+export async function uploadFile(projectId: string, formData: FormData): Promise<UploadResult> {
+  const file = formData.get('file') as File | null
+  if (!file || file.size === 0) return { success: false, error: 'No file provided' }
+
+  // Schema validation: size + name
+  const schemaResult = uploadFileSchema.safeParse({
+    mimeType: file.type,
+    fileSize: file.size,
+    fileName: file.name,
+  })
+  if (!schemaResult.success) {
+    return { success: false, error: schemaResult.error.issues[0].message }
+  }
+
+  // MIME type determines file type — server is authoritative
+  const mimeType = file.type
+  const csvMimes: readonly string[] = ALLOWED_CSV_MIME_TYPES
+  const screenshotMimes: readonly string[] = ALLOWED_SCREENSHOT_MIME_TYPES
+
+  const isCSV = csvMimes.includes(mimeType) || file.name.toLowerCase().endsWith('.csv')
+  const isScreenshot = screenshotMimes.includes(mimeType)
+
+  if (!isCSV && !isScreenshot) {
+    return {
+      success: false,
+      error: 'Unsupported file type. Allowed: CSV (.csv), PNG, JPEG, WebP',
+    }
+  }
+
+  const fileType = isCSV ? 'csv' : 'screenshot'
+
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  // Enforce per-project limits
+  const { count, error: countError } = await supabase
+    .from('uploads')
+    .select('*', { count: 'exact', head: true })
+    .eq('project_id', projectId)
+    .eq('file_type', fileType)
+
+  if (countError) return { success: false, error: countError.message }
+
+  const current = count ?? 0
+  if (fileType === 'csv' && current >= MAX_CSV_COUNT) {
+    return { success: false, error: 'Only 1 CSV file allowed per project. Delete the existing one first.' }
+  }
+  if (fileType === 'screenshot' && current >= MAX_SCREENSHOT_COUNT) {
+    return { success: false, error: `Maximum ${MAX_SCREENSHOT_COUNT} screenshots per project.` }
+  }
+
+  // Storage path: {userId}/{projectId}/{timestamp}-{filename}
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const storagePath = `${user.id}/${projectId}/${Date.now()}-${safeName}`
+
+  const { error: storageError } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(storagePath, file, { contentType: mimeType, upsert: false })
+
+  if (storageError) return { success: false, error: storageError.message }
+
+  const { error: dbError } = await supabase.from('uploads').insert({
+    project_id: projectId,
+    user_id: user.id,
+    file_name: file.name,
+    file_type: fileType,
+    mime_type: mimeType,
+    file_size_bytes: file.size,
+    storage_path: storagePath,
+  })
+
+  if (dbError) {
+    await supabase.storage.from(STORAGE_BUCKET).remove([storagePath])
+    return { success: false, error: dbError.message }
+  }
+
+  revalidatePath(`/projects/${projectId}/uploads`)
+  return { success: true }
+}
+
+export async function deleteUpload(uploadId: string, projectId: string): Promise<UploadResult> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { data: upload, error: fetchError } = await supabase
+    .from('uploads')
+    .select('storage_path')
+    .eq('id', uploadId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchError || !upload) return { success: false, error: 'Upload not found' }
+
+  await supabase.storage.from(STORAGE_BUCKET).remove([upload.storage_path])
+
+  const { error } = await supabase.from('uploads').delete().eq('id', uploadId)
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/projects/${projectId}/uploads`)
+  return { success: true }
 }
