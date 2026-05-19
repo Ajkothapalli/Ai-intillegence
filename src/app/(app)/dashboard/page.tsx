@@ -1,77 +1,226 @@
 import Link from 'next/link'
-import { listProjects } from '@/features/projects/queries'
+import { getDashboardStats } from '@/features/projects/queries'
+import { DashboardCharts } from './DashboardCharts'
+
+function TrendBadge({ delta, unit = '%' }: { delta: number; unit?: string }) {
+  if (delta === 0) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--foreground-subtle)] bg-gray-100 px-2 py-0.5 rounded-full">
+        — no change
+      </span>
+    )
+  }
+  const up = delta > 0
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"
+        className={up ? '' : 'rotate-180'}>
+        <path d="M5 8V2M2 5l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {up ? '+' : ''}{delta}{unit}
+    </span>
+  )
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  if (!status) {
+    return <span className="text-[11px] text-[var(--foreground-subtle)] bg-gray-100 px-2 py-0.5 rounded-full font-medium">No analysis</span>
+  }
+  const map: Record<string, string> = {
+    completed: 'bg-emerald-50 text-emerald-700',
+    running:   'bg-amber-50 text-amber-700',
+    pending:   'bg-sky-50 text-sky-700',
+    failed:    'bg-red-50 text-red-600',
+  }
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize ${map[status] ?? 'bg-gray-100 text-gray-600'}`}>
+      {status === 'running' && (
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+      )}
+      {status}
+    </span>
+  )
+}
 
 export default async function DashboardPage() {
-  const projects = await listProjects()
+  const stats = await getDashboardStats()
+
+  const statCards = [
+    {
+      label: 'Total Experiments',
+      value: stats.totalProjects,
+      delta: stats.projectsDelta,
+      description: 'vs last 30 days',
+      accent: 'from-[#196262]/10 to-[#196262]/5',
+      iconBg: 'bg-[var(--forest-50)]',
+      iconColor: 'text-[var(--primary)]',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M6.5 2v5.5L2.5 14a1 1 0 00.9 1.5h11.2a1 1 0 00.9-1.5L11.5 7.5V2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5 2h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Analyses Completed',
+      value: stats.totalCompletedAnalyses,
+      delta: stats.analysesDelta,
+      description: 'vs last 30 days',
+      accent: 'from-emerald-50 to-emerald-50/30',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-700',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M5.5 9l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Recommendations',
+      value: stats.totalRecommendations,
+      delta: stats.recommendationsDelta,
+      description: 'vs last 30 days',
+      accent: 'from-violet-50 to-violet-50/30',
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-700',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M9 2l2 5h5l-4 3 1.5 5L9 12.5 4.5 15 6 10l-4-3h5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      label: 'Avg Confidence',
+      value: `${stats.avgConfidence}%`,
+      delta: stats.confidenceDelta,
+      description: 'vs last 30 days',
+      unit: 'pts',
+      accent: 'from-sky-50 to-sky-50/30',
+      iconBg: 'bg-sky-50',
+      iconColor: 'text-sky-700',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <path d="M3 13l4-4 3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+  ]
 
   return (
-    <div className="max-w-4xl mx-auto px-6 lg:px-8 py-8">
+    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 space-y-8">
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Projects</h1>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
         <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          Each project holds your data, uploads, and AI-generated experiment recommendations.
+          All-time metrics and 30-day activity across your experiments.
         </p>
       </div>
 
-      {projects.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-[var(--border)]">
-          <div className="w-12 h-12 rounded-xl bg-[var(--forest-50)] flex items-center justify-center mx-auto mb-4">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-              <rect x="2" y="2" width="8" height="8" rx="2" fill="var(--forest-200)" />
-              <rect x="12" y="2" width="8" height="8" rx="2" fill="var(--forest-200)" />
-              <rect x="2" y="12" width="8" height="8" rx="2" fill="var(--forest-200)" />
-              <rect x="12" y="12" width="8" height="8" rx="2" fill="var(--forest-200)" />
-            </svg>
-          </div>
-          <p className="text-sm font-medium text-foreground">No projects yet</p>
-          <p className="text-xs text-[var(--foreground-muted)] mt-1 mb-4">
-            Create your first project to get started
-          </p>
-          <Link
-            href="/projects/new"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all hover:bg-[var(--primary-hover)] shadow-[var(--shadow-sm)]"
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map(card => (
+          <div
+            key={card.label}
+            className={`relative overflow-hidden bg-white rounded-2xl border border-[var(--border)] p-5 bg-gradient-to-br ${card.accent}`}
           >
-            Create first project
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-4 ${card.iconBg} ${card.iconColor}`}>
+              {card.icon}
+            </div>
+            <p className="text-[28px] font-bold text-foreground leading-none tabular-nums">{card.value}</p>
+            <p className="text-xs font-semibold text-foreground mt-1.5 mb-2">{card.label}</p>
+            <div className="flex items-center gap-1.5">
+              <TrendBadge delta={card.delta} unit={card.unit ?? '%'} />
+              <span className="text-[10px] text-[var(--foreground-subtle)]">{card.description}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity chart */}
+      <div className="bg-white rounded-2xl border border-[var(--border)] p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+            <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Experiments created and recommendations generated — last 30 days</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#196262]" />
+              <span className="text-[11px] text-[var(--foreground-muted)] font-medium">Experiments</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+              <span className="text-[11px] text-[var(--foreground-muted)] font-medium">Recommendations</span>
+            </div>
+          </div>
+        </div>
+        <DashboardCharts data={stats.activityData} />
+      </div>
+
+      {/* Experiment feed */}
+      <div className="bg-white rounded-2xl border border-[var(--border)] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+          <h2 className="text-sm font-semibold text-foreground">Recent Experiments</h2>
+          <Link
+            href="/experiments"
+            className="text-xs font-medium text-[var(--primary)] hover:underline"
+          >
+            View all →
           </Link>
         </div>
-      ) : (
-        <div className="grid gap-3">
-          {projects.map(project => (
+
+        {stats.feed.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="text-sm text-[var(--foreground-muted)]">No experiments yet.</p>
             <Link
-              key={project.id}
-              href={`/projects/${project.id}`}
-              className="group block bg-white rounded-xl border border-[var(--border)] px-6 py-5 transition-all hover:border-[var(--primary)]/40 hover:shadow-[var(--shadow-md)] hover:-translate-y-px"
+              href="/experiments"
+              className="inline-flex mt-3 h-8 items-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-[var(--primary-hover)] transition-colors"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-foreground group-hover:text-[var(--primary)] transition-colors">
-                    {project.name}
-                  </h2>
-                  {project.description && (
-                    <p className="text-sm text-[var(--foreground-muted)] mt-1 line-clamp-2">
-                      {project.description}
-                    </p>
-                  )}
-                  {project.primary_metric && (
-                    <p className="text-xs text-[var(--foreground-subtle)] mt-2">
-                      Metric: <span className="text-[var(--primary)] font-medium">{project.primary_metric}</span>
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 ml-4 shrink-0">
-                  <span className="text-xs text-[var(--foreground-subtle)] whitespace-nowrap">
-                    {new Date(project.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="text-[var(--foreground-subtle)] group-hover:text-[var(--primary)] transition-colors">
-                    <path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
+              Create first experiment
             </Link>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <ul>
+            {stats.feed.map((item, i) => (
+              <li key={item.id} className={i > 0 ? 'border-t border-[var(--border)]' : ''}>
+                <Link
+                  href={`/projects/${item.id}`}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--forest-50)] transition-colors group"
+                >
+                  {/* Dot timeline indicator */}
+                  <div className="w-2 h-2 rounded-full bg-[var(--primary)]/30 group-hover:bg-[var(--primary)] transition-colors shrink-0" />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-[var(--primary)] transition-colors truncate">
+                      {item.name}
+                    </p>
+                    {item.primaryMetric && (
+                      <p className="text-[11px] text-[var(--foreground-subtle)] mt-0.5 truncate">
+                        Metric: <span className="font-medium text-[var(--primary)]">{item.primaryMetric}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <StatusBadge status={item.analysisStatus} />
+                    {item.recommendationCount > 0 && (
+                      <span className="text-[11px] font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full">
+                        {item.recommendationCount} recs
+                      </span>
+                    )}
+                    <span className="text-[11px] text-[var(--foreground-subtle)] whitespace-nowrap">
+                      {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
     </div>
   )
 }

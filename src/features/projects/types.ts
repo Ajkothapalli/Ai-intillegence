@@ -24,3 +24,20 @@ export type Upload = {
   created_at: string
   updated_at: string
 }
+
+export type CohortDimension = {
+  id: string
+  project_id: string
+  user_id: string
+  name: string
+  values: string[]
+  created_at: string
+}
+
+export type CohortUpload = {
+  id: string
+  upload_id: string
+  dimension_id: string
+  segment_value: string
+  created_at: string
+}

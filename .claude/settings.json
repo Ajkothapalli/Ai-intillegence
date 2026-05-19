@@ -63,10 +63,13 @@
       "Bash(node -e \"require\\('recharts'\\); console.log\\('ok'\\)\")",
       "Bash(kill 34739)",
       "Bash(node node_modules/next/dist/bin/next lint --help)",
-      "Bash(node node_modules/eslint/bin/eslint.js src --ext .ts,.tsx --max-warnings 0)"
+      "Bash(node node_modules/eslint/bin/eslint.js src --ext .ts,.tsx --max-warnings 0)",
+      "Bash(node node_modules/next/dist/bin/next build)",
+      "Bash(kill 39105)"
     ],
     "additionalDirectories": [
-      "/Users/ajaykothapalli/AI Intillegence/src/app/(app)/projects/[id]"
+      "/Users/ajaykothapalli/AI Intillegence/src/app/(app)/projects/[id]",
+      "/Users/ajaykothapalli/AI Intillegence/src/app/api/analysis/[id]"
     ]
   }
 }

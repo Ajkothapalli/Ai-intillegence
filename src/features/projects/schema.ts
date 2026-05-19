@@ -10,7 +10,18 @@ export const createProjectSchema = z.object({
   business_goal: z.string().max(500).optional(),
 })
 
+export const updateProjectSchema = z.object({
+  name: z.string().min(1, 'Project name is required').max(100),
+  description: z.string().max(500).optional(),
+  app_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  target_audience: z.string().max(300).optional(),
+  funnel_stages: z.string().optional(),
+  primary_metric: z.string().max(200).optional(),
+  business_goal: z.string().max(500).optional(),
+})
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>
 
 export const ALLOWED_CSV_MIME_TYPES = ['text/csv', 'application/vnd.ms-excel'] as const
 export const ALLOWED_SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const

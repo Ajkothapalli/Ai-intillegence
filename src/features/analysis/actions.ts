@@ -104,7 +104,26 @@ export async function runProjectAnalysis(
       if (parts.length > 0) userResearchSummary = parts.join('\n\n')
     }
 
-    const output = await runAnalysis(project, uploadsWithContent, useDeepModel, userResearchSummary)
+    // Generate short-lived signed URLs for screenshots to pass as vision images
+    const screenshotUploads = (uploads ?? []).filter(u => u.file_type === 'screenshot')
+    const screenshotUrls: string[] = (
+      await Promise.all(
+        screenshotUploads.map(async u => {
+          const { data } = await supabase.storage
+            .from('uploads')
+            .createSignedUrl(u.storage_path, 300) // 5-min TTL — only needs to last for the API call
+          return data?.signedUrl ?? null
+        })
+      )
+    ).filter((url): url is string => url !== null)
+
+    const output = await runAnalysis(
+      project,
+      uploadsWithContent,
+      useDeepModel,
+      userResearchSummary,
+      screenshotUrls.length > 0 ? screenshotUrls : undefined,
+    )
 
     // Store recommendations
     const rows = output.recommendations.map(r => ({
@@ -117,6 +136,7 @@ export async function runProjectAnalysis(
       confidence: r.confidence,
       evidence: r.evidence,
       rationale: r.rationale ?? null,
+      screenshot_annotation: r.screenshot_annotation ?? null,
     }))
 
     await supabase.from('recommendations').insert(rows)

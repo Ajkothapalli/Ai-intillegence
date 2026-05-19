@@ -1,22 +1,36 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getProject } from '@/features/projects/queries'
+import { getProject, getUploadsByProject } from '@/features/projects/queries'
 import { getAnalysisByProject, getRecommendationsByAnalysis } from '@/features/analysis/queries'
-import { RecommendationList } from '@/features/analysis/components/RecommendationList'
+import { AnnotatedRecommendations } from '@/features/analysis/components/AnnotatedRecommendations'
 import { ConfidenceChart } from '@/features/analysis/components/ConfidenceChart'
 import { Alert } from '@/components/ui/alert'
+import { createServerClient } from '@/lib/supabase/server'
 
 type Props = { params: Promise<{ id: string }> }
 
 export default async function RecommendationsPage({ params }: Props) {
   const { id } = await params
-  const [project, analysis] = await Promise.all([
+  const [project, analysis, uploads, supabase] = await Promise.all([
     getProject(id),
     getAnalysisByProject(id),
+    getUploadsByProject(id),
+    createServerClient(),
   ])
   if (!project) notFound()
 
   const recommendations = analysis ? await getRecommendationsByAnalysis(analysis.id) : []
+
+  // Generate signed URLs for screenshots to pass to the annotated view
+  const screenshotUploads = uploads.filter(u => u.file_type === 'screenshot')
+  const screenshots = await Promise.all(
+    screenshotUploads.map(async u => {
+      const { data } = await supabase.storage
+        .from('uploads')
+        .createSignedUrl(u.storage_path, 3600)
+      return { signedUrl: data?.signedUrl ?? null, file_name: u.file_name }
+    }),
+  ).then(list => list.filter((s): s is { signedUrl: string; file_name: string } => s.signedUrl !== null))
 
   return (
     <main className="min-h-screen bg-background">
@@ -29,7 +43,7 @@ export default async function RecommendationsPage({ params }: Props) {
         </Link>
       </header>
 
-      <div className="max-w-4xl mx-auto px-8 py-10 space-y-8">
+      <div className="max-w-5xl mx-auto px-8 py-10 space-y-8">
 
         {/* Page heading */}
         <div>
@@ -41,7 +55,7 @@ export default async function RecommendationsPage({ params }: Props) {
           </p>
           {analysis?.completed_at && (
             <p className="text-xs text-[var(--foreground-subtle)] mt-1">
-              Last analysis: {new Date(analysis.completed_at).toLocaleString()} · {analysis.model}
+              Last analysis: {new Date(analysis.completed_at).toLocaleString('en-US')} · {analysis.model}
             </p>
           )}
         </div>
@@ -64,12 +78,16 @@ export default async function RecommendationsPage({ params }: Props) {
           </Alert>
         )}
 
-        {/* Confidence chart — only when we have data */}
         {recommendations.length > 0 && (
           <ConfidenceChart recommendations={recommendations} />
         )}
 
-        <RecommendationList recommendations={recommendations} />
+        {recommendations.length > 0 && (
+          <AnnotatedRecommendations
+            recommendations={recommendations}
+            screenshots={screenshots}
+          />
+        )}
 
         {recommendations.length === 0 && !analysis && (
           <div className="text-center pt-4">

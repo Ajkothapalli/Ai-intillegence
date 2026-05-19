@@ -2,6 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@keyframes dashFlow {
+  from { stroke-dashoffset: 18; }
+  to   { stroke-dashoffset: 0;  }
+}
+@keyframes pinPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: .55; }
+  50%       { transform: translate(-50%, -50%) scale(1.55); opacity: 0;   }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════

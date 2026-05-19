@@ -5,7 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
 import {
   createProjectSchema,
+  updateProjectSchema,
   type CreateProjectInput,
+  type UpdateProjectInput,
   uploadFileSchema,
   ALLOWED_CSV_MIME_TYPES,
   ALLOWED_SCREENSHOT_MIME_TYPES,
@@ -18,9 +20,44 @@ import {
 } from './schema'
 
 export type ProjectActionResult = { success: true; id: string } | { success: false; error: string }
-export type UploadResult = { success: true } | { success: false; error: string }
+export type UploadResult =
+  | { success: true; segmented: true; uploadId: string; segments: string[] }
+  | { success: true; segmented: false }
+  | { success: false; error: string }
 
 const STORAGE_BUCKET = 'uploads'
+
+// ── CSV segment detection ───────────────────────────────────
+
+function parseCSVRow(line: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (const ch of line) {
+    if (ch === '"') { inQuotes = !inQuotes }
+    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = '' }
+    else { current += ch }
+  }
+  result.push(current.trim())
+  return result
+}
+
+function detectCSVSegments(csvText: string): string[] | null {
+  const lines = csvText.trim().split('\n').filter(l => l.trim())
+  if (lines.length < 2) return null
+
+  const SEGMENT_HEADERS = ['segment', 'segments', 'cohort', 'group', 'user_segment', 'tier', 'plan']
+  const headers = parseCSVRow(lines[0]).map(h => h.toLowerCase().replace(/['"]/g, ''))
+  const colIdx = headers.findIndex(h => SEGMENT_HEADERS.includes(h))
+  if (colIdx === -1) return null
+
+  const values = new Set<string>()
+  for (let i = 1; i < lines.length; i++) {
+    const val = parseCSVRow(lines[i])[colIdx]?.replace(/['"]/g, '').trim()
+    if (val) values.add(val)
+  }
+  return values.size > 0 ? Array.from(values).sort() : null
+}
 
 // ── Project ────────────────────────────────────────────────
 
@@ -55,7 +92,7 @@ export async function createProject(data: CreateProjectInput): Promise<ProjectAc
 
   if (error) return { success: false, error: error.message }
 
-  redirect(`/projects/${row.id}`)
+  redirect(`/projects/${row.id}?from=new`)
 }
 
 // ── Uploads ────────────────────────────────────────────────
@@ -154,10 +191,64 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
   }
 
   revalidatePath(`/projects/${projectId}/uploads`)
+
+  // Detect cohort segments in CSV uploads
+  if (fileType === 'csv') {
+    try {
+      const text = await file.text()
+      const segments = detectCSVSegments(text)
+      if (segments) {
+        const { data: inserted } = await supabase
+          .from('uploads')
+          .select('id')
+          .eq('storage_path', storagePath)
+          .single()
+        if (inserted) {
+          return { success: true, segmented: true, uploadId: inserted.id, segments }
+        }
+      }
+    } catch {
+      // segment detection is best-effort — fall through
+    }
+  }
+
+  return { success: true, segmented: false }
+}
+
+export async function saveCohortDimension(
+  projectId: string,
+  uploadId: string,
+  dimensionName: string,
+  segments: string[],
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (!dimensionName.trim()) return { success: false, error: 'Dimension name is required' }
+
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { data: dimension, error: dimError } = await supabase
+    .from('cohort_dimensions')
+    .insert({ project_id: projectId, user_id: user.id, name: dimensionName.trim(), values: segments })
+    .select('id')
+    .single()
+
+  if (dimError) return { success: false, error: dimError.message }
+
+  const rows = segments.map(seg => ({
+    upload_id: uploadId,
+    dimension_id: dimension.id,
+    segment_value: seg,
+  }))
+
+  const { error: cuError } = await supabase.from('cohort_uploads').insert(rows)
+  if (cuError) return { success: false, error: cuError.message }
+
+  revalidatePath(`/projects/${projectId}/uploads`)
   return { success: true }
 }
 
-export async function deleteUpload(uploadId: string, projectId: string): Promise<UploadResult> {
+export async function deleteUpload(uploadId: string, projectId: string): Promise<{ success: true } | { success: false; error: string }> {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'Not authenticated' }
@@ -178,4 +269,60 @@ export async function deleteUpload(uploadId: string, projectId: string): Promise
 
   revalidatePath(`/projects/${projectId}/uploads`)
   return { success: true }
+}
+
+// ── Project update / delete ─────────────────────────────────
+
+export async function updateProject(
+  id: string,
+  data: UpdateProjectInput,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const parsed = updateProjectSchema.safeParse(data)
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message }
+
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const funnelStages = parsed.data.funnel_stages
+    ? parsed.data.funnel_stages.split(',').map(s => s.trim()).filter(Boolean)
+    : null
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      app_url: parsed.data.app_url || null,
+      target_audience: parsed.data.target_audience || null,
+      funnel_stages: funnelStages,
+      primary_metric: parsed.data.primary_metric || null,
+      business_goal: parsed.data.business_goal || null,
+    })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/projects/${id}`)
+  revalidatePath(`/projects/${id}/settings`)
+  return { success: true }
+}
+
+export async function deleteProject(
+  id: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { success: false, error: error.message }
+
+  redirect('/experiments?deleted=1')
 }

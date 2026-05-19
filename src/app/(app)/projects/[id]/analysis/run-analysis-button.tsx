@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { runProjectAnalysis } from '@/features/analysis/actions'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/alert'
@@ -14,12 +15,14 @@ export function RunAnalysisButton({ projectId }: { projectId: string }) {
 
   function handleRun() {
     setError(null)
+    toast.info('Analysis started — this takes about 30 seconds')
     startTransition(async () => {
       const result = await runProjectAnalysis(projectId, useDeep)
       if (!result.success) {
+        toast.error(result.error)
         setError(result.error)
       } else {
-        router.push(`/projects/${projectId}/recommendations`)
+        router.push(`/projects/${projectId}`)
       }
     })
   }

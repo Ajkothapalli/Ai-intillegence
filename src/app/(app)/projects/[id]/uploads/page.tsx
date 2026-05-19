@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getProject, getUploadsByProject } from '@/features/projects/queries'
+import { getProject, getUploadsByProject, getCohortDataByProject } from '@/features/projects/queries'
 import { createServerClient } from '@/lib/supabase/server'
 import { MAX_CSV_COUNT, MAX_SCREENSHOT_COUNT, MAX_USER_RESEARCH_COUNT } from '@/features/projects/schema'
 import { UploadZone } from './upload-zone'
@@ -10,10 +10,11 @@ type Props = { params: Promise<{ id: string }> }
 export default async function UploadsPage({ params }: Props) {
   const { id } = await params
 
-  const [project, uploads, supabase] = await Promise.all([
+  const [project, uploads, supabase, cohortData] = await Promise.all([
     getProject(id),
     getUploadsByProject(id),
     createServerClient(),
+    getCohortDataByProject(id),
   ])
   if (!project) notFound()
 
@@ -31,6 +32,10 @@ export default async function UploadsPage({ params }: Props) {
   const csvUploads          = uploadsWithUrls.filter(u => u.file_type === 'csv')
   const screenshotUploads   = uploadsWithUrls.filter(u => u.file_type === 'screenshot')
   const userResearchUploads = uploadsWithUrls.filter(u => u.file_type === 'user_research')
+
+  const csvDimension = csvUploads[0]
+    ? cohortData.find(c => c.uploadId === csvUploads[0].id)
+    : undefined
 
   return (
     <div className="max-w-2xl mx-auto px-6 lg:px-8 py-8 space-y-10">
@@ -70,6 +75,7 @@ export default async function UploadsPage({ params }: Props) {
           fileType="csv"
           uploads={csvUploads}
           maxCount={MAX_CSV_COUNT}
+          cohortDimension={csvDimension ? { name: csvDimension.dimensionName, segments: csvDimension.segments } : undefined}
         />
       </section>
 

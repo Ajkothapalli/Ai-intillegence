@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { IllustratedAvatar } from '@/components/ui/illustrated-avatar'
+import { ProfileNameEdit } from './profile-name-edit'
 
 export default async function ProfilePage() {
   const supabase = await createServerClient()
@@ -32,11 +33,12 @@ export default async function ProfilePage() {
       <div className="bg-white rounded-2xl border border-[var(--border)] divide-y divide-[var(--border)]">
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-[var(--foreground-subtle)] uppercase tracking-wider mb-1">Full name</p>
-          <p className="text-sm text-foreground">{fullName ?? '—'}</p>
+          <ProfileNameEdit initialName={fullName ?? ''} />
         </div>
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-[var(--foreground-subtle)] uppercase tracking-wider mb-1">Email</p>
           <p className="text-sm text-foreground">{email}</p>
+          <p className="text-[11px] text-[var(--foreground-subtle)] mt-0.5">Email cannot be changed here</p>
         </div>
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-[var(--foreground-subtle)] uppercase tracking-wider mb-1">User ID</p>

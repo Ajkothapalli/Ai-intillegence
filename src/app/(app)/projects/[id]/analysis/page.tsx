@@ -4,7 +4,6 @@ import { getProject } from '@/features/projects/queries'
 import { getAnalysisByProject } from '@/features/analysis/queries'
 import { RunAnalysisButton } from './run-analysis-button'
 import { Badge } from '@/components/ui/badge'
-import { Alert } from '@/components/ui/alert'
 
 type Props = { params: Promise<{ id: string }> }
 

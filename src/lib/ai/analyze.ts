@@ -25,11 +25,11 @@ function buildProjectContextBlock(project: Project): string {
   ].filter(Boolean).join('\n')
 }
 
-function buildCsvBlock(uploads: UploadInput[]): string | null {
-  const csvUploads = uploads.filter(u => u.file_type === 'csv')
-  const screenshotUploads = uploads.filter(u => u.file_type === 'screenshot')
+function buildDataBlock(uploads: UploadInput[]): string | null {
+  const csvUploads      = uploads.filter(u => u.file_type === 'csv')
+  const screenshotCount = uploads.filter(u => u.file_type === 'screenshot').length
 
-  if (csvUploads.length === 0 && screenshotUploads.length === 0) return null
+  if (csvUploads.length === 0 && screenshotCount === 0) return null
 
   const parts: string[] = ['## Uploaded Data']
 
@@ -40,15 +40,20 @@ function buildCsvBlock(uploads: UploadInput[]): string | null {
     )
   }
 
-  for (const u of screenshotUploads) {
-    parts.push(`### Screenshot: ${u.file_name}`)
+  if (screenshotCount > 0) {
+    parts.push(
+      `### Screenshots`,
+      `${screenshotCount} screenshot(s) attached as images above. Analyze the visual UI carefully.`,
+    )
   }
 
   return parts.join('\n\n')
 }
 
 const TASK_INSTRUCTION = `## Task
-Analyze the project context and uploaded data above. Generate prioritized experiment recommendations.
+Analyze the project context, screenshots (if attached), and uploaded data above. Generate prioritized experiment recommendations.
+
+For each recommendation that targets a visible UI area in a screenshot, include screenshot_annotation with the exact x/y percentage coordinates pointing to where the new/changed element should appear.
 
 Return ONLY valid JSON — no markdown, no prose outside the JSON object:
 { "recommendations": [...], "summary": "optional overall summary" }`
@@ -58,20 +63,19 @@ export async function runAnalysis(
   uploads: UploadInput[],
   useDeepModel = false,
   userResearchSummary?: string,
+  screenshotUrls?: string[],
 ): Promise<AnalysisOutput> {
   const model = useDeepModel ? 'claude-opus-4-7' : 'claude-sonnet-4-6'
 
   const contextText = buildProjectContextBlock(project)
-  const csvText = buildCsvBlock(uploads)
+  const dataText    = buildDataBlock(uploads)
 
-  // Structured content blocks — cache_control applied per layer:
-  // 1. System prompt  — stable across all projects (longest TTL benefit)
-  // 2. Project context — stable for the lifetime of the project
-  // 3. CSV/upload data — stable until user re-uploads
-  // 4. Task instruction — not cached (cheapest, always last)
-  type TextBlock = Anthropic.TextBlockParam & { cache_control?: { type: 'ephemeral' } }
+  // Content block type that accepts both text and image blocks with cache_control
+  type AnyBlock =
+    | (Anthropic.TextBlockParam  & { cache_control?: { type: 'ephemeral' } })
+    | (Anthropic.ImageBlockParam & { cache_control?: { type: 'ephemeral' } })
 
-  const userContent: TextBlock[] = [
+  const userContent: AnyBlock[] = [
     {
       type: 'text',
       text: contextText,
@@ -79,10 +83,25 @@ export async function runAnalysis(
     },
   ]
 
-  if (csvText) {
+  // Inject screenshot images so Claude can visually analyze the UI
+  if (screenshotUrls && screenshotUrls.length > 0) {
     userContent.push({
       type: 'text',
-      text: csvText,
+      text: `## Screenshots (${screenshotUrls.length} image${screenshotUrls.length > 1 ? 's' : ''})\nAnalyze each screenshot carefully for UI/UX improvements. Screenshots are numbered 0–${screenshotUrls.length - 1}.`,
+    })
+    for (const url of screenshotUrls) {
+      userContent.push({
+        type: 'image',
+        source: { type: 'url', url },
+        cache_control: { type: 'ephemeral' },
+      })
+    }
+  }
+
+  if (dataText) {
+    userContent.push({
+      type: 'text',
+      text: dataText,
       cache_control: { type: 'ephemeral' },
     })
   }
@@ -107,7 +126,7 @@ export async function runAnalysis(
         cache_control: { type: 'ephemeral' },
       },
     ],
-    messages: [{ role: 'user', content: userContent }],
+    messages: [{ role: 'user', content: userContent as Anthropic.MessageParam['content'] }],
   })
 
   const textBlock = message.content.find(b => b.type === 'text')

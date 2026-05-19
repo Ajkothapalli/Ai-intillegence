@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -60,6 +60,15 @@ function IconSignOut() {
   )
 }
 
+function IconUser() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+      <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M2.5 13.5C2.5 11 5 9 8 9s5.5 2 5.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function IconChevronsLeft() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
@@ -106,13 +115,13 @@ const NAV: NavItem[] = [
     href: '/dashboard',
     label: 'Dashboard',
     icon: <IconGrid />,
-    isActive: p => p === '/dashboard' || p.startsWith('/projects/'),
+    isActive: p => p === '/dashboard',
   },
   {
     href: '/experiments',
     label: 'Experiments',
     icon: <IconBeaker />,
-    isActive: p => p === '/experiments' || p.startsWith('/experiments/'),
+    isActive: p => p === '/experiments' || p.startsWith('/experiments/') || p.startsWith('/projects/'),
   },
   {
     href: '/integrations',
@@ -169,6 +178,65 @@ function NavList({
   )
 }
 
+// ── Profile popover menu ──────────────────────────────────────────────────────
+
+function ProfilePopover({
+  userEmail,
+  userName,
+  open,
+  onClose,
+}: {
+  userEmail: string
+  userName?: string
+  open: boolean
+  onClose: () => void
+}) {
+  const displayName = userName || userEmail.split('@')[0]
+
+  if (!open) return null
+
+  return (
+    <div
+      className="absolute bottom-full left-0 right-0 mb-2 mx-2 z-50 bg-white rounded-xl border border-[var(--border)] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden"
+      role="menu"
+      aria-label="Profile menu"
+    >
+      {/* User info header */}
+      <div className="px-3 py-3 border-b border-[var(--border)] bg-[var(--forest-50)]/40">
+        <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
+        <p className="text-[10px] text-[var(--foreground-subtle)] truncate mt-0.5">{userEmail}</p>
+      </div>
+
+      {/* Menu items */}
+      <div className="p-1">
+        <Link
+          href="/profile"
+          onClick={onClose}
+          role="menuitem"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-[var(--forest-50)] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+        >
+          <IconUser />
+          <span>Profile</span>
+        </Link>
+      </div>
+
+      {/* Divider + sign out */}
+      <div className="border-t border-[var(--border)] p-1">
+        <form action={signOut}>
+          <button
+            type="submit"
+            role="menuitem"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-red-50 hover:text-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+          >
+            <IconSignOut />
+            <span>Sign out</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── User footer (used in both desktop pill & mobile drawer) ───────────────────
 
 function UserFooter({
@@ -180,39 +248,54 @@ function UserFooter({
   userEmail: string
   userName?: string
 }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
   const displayName = userName || userEmail.split('@')[0]
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [open])
 
   if (collapsed) {
     return (
-      <div className="flex flex-col items-center gap-2 p-2 border-t border-black/5">
-        <Link
-          href="/profile"
-          title={`${displayName} — View profile`}
-          aria-label={`${displayName} — View profile`}
+      <div ref={ref} className="relative flex flex-col items-center p-2 border-t border-black/5">
+        <ProfilePopover userEmail={userEmail} userName={userName} open={open} onClose={() => setOpen(false)} />
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          aria-label={`${displayName} — Open profile menu`}
+          aria-expanded={open}
+          aria-haspopup="menu"
           className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-1 transition-transform hover:scale-105"
         >
           <IllustratedAvatar seed={userEmail} size={34} />
-        </Link>
-        <form action={signOut}>
-          <button
-            type="submit"
-            aria-label="Sign out"
-            title="Sign out"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-muted)] hover:bg-[var(--rose-50)] hover:text-[var(--rose-600)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
-          >
-            <IconSignOut />
-          </button>
-        </form>
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="p-3 border-t border-black/5">
-      <Link
-        href="/profile"
-        className="flex items-center gap-2.5 rounded-xl p-1.5 -mx-1.5 hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 group"
-        aria-label="View profile"
+    <div ref={ref} className="relative p-3 border-t border-black/5">
+      <ProfilePopover userEmail={userEmail} userName={userName} open={open} onClose={() => setOpen(false)} />
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-label="Open profile menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="w-full flex items-center gap-2.5 rounded-xl p-1.5 -mx-1.5 hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 group text-left"
       >
         <IllustratedAvatar seed={userEmail} size={36} />
         <div className="flex-1 min-w-0">
@@ -221,17 +304,14 @@ function UserFooter({
           </p>
           <p className="text-[10px] text-[var(--foreground-subtle)] truncate mt-0.5">{userEmail}</p>
         </div>
-      </Link>
-      <form action={signOut} className="mt-1">
-        <button
-          type="submit"
-          aria-label="Sign out"
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-[var(--foreground-muted)] hover:bg-[var(--rose-50)] hover:text-[var(--rose-600)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          aria-hidden="true"
+          className={cn('shrink-0 text-[var(--foreground-subtle)] transition-transform duration-150', open ? 'rotate-180' : '')}
         >
-          <IconSignOut />
-          <span>Sign out</span>
-        </button>
-      </form>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
     </div>
   )
 }

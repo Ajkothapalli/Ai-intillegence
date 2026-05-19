@@ -11,6 +11,12 @@ export type Analysis = {
   updated_at: string
 }
 
+export type ScreenshotAnnotation = {
+  screenshot_index: number
+  x: number // % from left
+  y: number // % from top
+}
+
 export type DbRecommendation = {
   id: string
   analysis_id: string
@@ -22,6 +28,7 @@ export type DbRecommendation = {
   confidence: number
   evidence: string[]
   rationale: string | null
+  screenshot_annotation: ScreenshotAnnotation | null
   created_at: string
   updated_at: string
 }

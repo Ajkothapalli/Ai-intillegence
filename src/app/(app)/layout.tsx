@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Toaster } from 'sonner'
 import { createServerClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 
@@ -35,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           'bg-white pt-14 lg:pt-0',
         ].join(' ')}
       >
-        {/* Persistent top bar — New project button on every page */}
+        {/* Persistent top bar */}
         <div className="sticky top-0 z-10 flex items-center justify-end px-6 py-3 bg-white/90 backdrop-blur-sm border-b border-[var(--border)]">
           <Link
             href="/projects/new"
@@ -44,13 +45,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
               <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
-            New project
+            New experiment
           </Link>
         </div>
 
         {children}
       </main>
 
+      <Toaster position="bottom-right" richColors />
     </div>
   )
 }

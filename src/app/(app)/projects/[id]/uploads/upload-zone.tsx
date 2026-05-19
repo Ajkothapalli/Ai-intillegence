@@ -2,8 +2,10 @@
 
 import { useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { uploadFile, deleteUpload } from '@/features/projects/actions'
+import { CohortDimensionModal } from '@/features/projects/components/CohortDimensionModal'
 import type { Upload } from '@/features/projects/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -19,11 +21,17 @@ interface PendingFile {
   error?: string
 }
 
+export interface CohortDimensionInfo {
+  name: string
+  segments: string[]
+}
+
 interface Props {
   projectId: string
   fileType: 'csv' | 'screenshot' | 'user_research'
   uploads: UploadWithUrl[]
   maxCount: number
+  cohortDimension?: CohortDimensionInfo
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -145,16 +153,26 @@ function DropArea({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function UploadZone({ projectId, fileType, uploads, maxCount }: Props) {
+export function UploadZone({ projectId, fileType, uploads, maxCount, cohortDimension }: Props) {
   const [isDragging, setIsDragging] = useState(false)
   const [pending, setPending]       = useState<PendingFile[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [cohortModal, setCohortModal] = useState<{ uploadId: string; segments: string[] } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const router   = useRouter()
 
   const activeUploads = pending.filter(p => p.status !== 'error')
   const isFull        = uploads.length + activeUploads.length >= maxCount
   const canAddMore    = !isFull
+
+  const modal = cohortModal && (
+    <CohortDimensionModal
+      projectId={projectId}
+      uploadId={cohortModal.uploadId}
+      segments={cohortModal.segments}
+      onClose={() => { setCohortModal(null); router.refresh() }}
+    />
+  )
 
   // ── Upload logic ────────────────────────────────────────────────────────────
 
@@ -190,15 +208,20 @@ export function UploadZone({ projectId, fileType, uploads, maxCount }: Props) {
     clearInterval(interval)
 
     if (result.success) {
+      toast.success('File uploaded')
       setPending(prev => prev.map(u =>
         u.localId === localId ? { ...u, progress: 100, status: 'success' } : u,
       ))
+      if (result.segmented) {
+        setCohortModal({ uploadId: result.uploadId, segments: result.segments })
+      }
       setTimeout(() => {
         if (preview) URL.revokeObjectURL(preview)
         setPending(prev => prev.filter(u => u.localId !== localId))
         router.refresh()
       }, 1400)
     } else {
+      toast.error(result.error)
       setPending(prev => prev.map(u =>
         u.localId === localId ? { ...u, status: 'error', error: result.error } : u,
       ))
@@ -257,56 +280,79 @@ export function UploadZone({ projectId, fileType, uploads, maxCount }: Props) {
     // State A — file is uploading / just uploaded
     if (inFlight) {
       return (
-        <div className="rounded-xl border border-[var(--border)] bg-white p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[var(--forest-50)] flex items-center justify-center shrink-0">
-              <CsvIcon />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{inFlight.file.name}</p>
-              <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">{formatBytes(inFlight.file.size)}</p>
-              <ProgressBar progress={inFlight.progress} status={inFlight.status} />
-              {inFlight.error && (
-                <p className="text-xs text-[var(--rose-600)] mt-1.5">{inFlight.error}</p>
+        <>
+          {modal}
+          <div className="rounded-xl border border-[var(--border)] bg-white p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[var(--forest-50)] flex items-center justify-center shrink-0">
+                <CsvIcon />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{inFlight.file.name}</p>
+                <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">{formatBytes(inFlight.file.size)}</p>
+                <ProgressBar progress={inFlight.progress} status={inFlight.status} />
+                {inFlight.error && (
+                  <p className="text-xs text-[var(--rose-600)] mt-1.5">{inFlight.error}</p>
+                )}
+              </div>
+              {inFlight.status === 'error' && (
+                <button
+                  onClick={() => dismissError(inFlight.localId)}
+                  className="text-[var(--foreground-subtle)] hover:text-foreground transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <CloseIcon />
+                </button>
               )}
             </div>
-            {inFlight.status === 'error' && (
-              <button
-                onClick={() => dismissError(inFlight.localId)}
-                className="text-[var(--foreground-subtle)] hover:text-foreground transition-colors"
-                aria-label="Dismiss"
-              >
-                <CloseIcon />
-              </button>
-            )}
           </div>
-        </div>
+        </>
       )
     }
 
     // State B — file uploaded, show it inside the zone
     if (existing) {
       return (
-        <div className="rounded-xl border border-[var(--border)] bg-white p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[var(--forest-50)] flex items-center justify-center shrink-0">
-              <CsvIcon />
+        <>
+          {modal}
+          <div className="rounded-xl border border-[var(--border)] bg-white p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[var(--forest-50)] flex items-center justify-center shrink-0">
+                <CsvIcon />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{existing.file_name}</p>
+                <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">
+                  {formatBytes(existing.file_size_bytes)} · {new Date(existing.created_at).toLocaleDateString('en-US')}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDelete(existing.id)}
+                disabled={deletingId === existing.id}
+                className="text-xs font-medium text-[var(--rose-600)] hover:text-[var(--rose-700)] disabled:opacity-40 transition-colors shrink-0 ml-2"
+              >
+                {deletingId === existing.id ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{existing.file_name}</p>
-              <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">
-                {formatBytes(existing.file_size_bytes)} · {new Date(existing.created_at).toLocaleDateString('en-US')}
-              </p>
-            </div>
-            <button
-              onClick={() => handleDelete(existing.id)}
-              disabled={deletingId === existing.id}
-              className="text-xs font-medium text-[var(--rose-600)] hover:text-[var(--rose-700)] disabled:opacity-40 transition-colors shrink-0 ml-2"
-            >
-              {deletingId === existing.id ? 'Deleting…' : 'Delete'}
-            </button>
+            {cohortDimension && (
+              <div className="border-t border-[var(--border)] pt-3">
+                <p className="text-[11px] font-semibold text-[var(--foreground-subtle)] uppercase tracking-wider mb-2">
+                  Segmented by {cohortDimension.name}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {cohortDimension.segments.map(seg => (
+                    <span
+                      key={seg}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--forest-50)] text-[var(--forest-700)] border border-[var(--forest-200)]"
+                    >
+                      {seg}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )
     }
 
@@ -488,6 +534,7 @@ export function UploadZone({ projectId, fileType, uploads, maxCount }: Props) {
             className="group relative aspect-video rounded-lg overflow-hidden bg-[var(--forest-50)] border border-[var(--border)]"
           >
             {u.signedUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={u.signedUrl}
                 alt={u.file_name}
@@ -529,6 +576,7 @@ export function UploadZone({ projectId, fileType, uploads, maxCount }: Props) {
           >
             {/* Image preview (dimmed while uploading) */}
             {p.preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={p.preview}
                 alt={p.file.name}
