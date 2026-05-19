@@ -65,7 +65,9 @@
       "Bash(node node_modules/next/dist/bin/next lint --help)",
       "Bash(node node_modules/eslint/bin/eslint.js src --ext .ts,.tsx --max-warnings 0)",
       "Bash(node node_modules/next/dist/bin/next build)",
-      "Bash(kill 39105)"
+      "Bash(kill 39105)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('types',''\\), d.get\\('typings',''\\)\\)\")",
+      "Bash(node -e \"require\\('mammoth'\\); console.log\\('ok'\\)\")"
     ],
     "additionalDirectories": [
       "/Users/ajaykothapalli/AI Intillegence/src/app/(app)/projects/[id]",

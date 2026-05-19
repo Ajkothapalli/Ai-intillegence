@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
 import { getAnalysisByProject } from '@/features/analysis/queries'
+import { getIntegrationsByProject } from '@/features/integrations/queries'
 import { createServerClient } from '@/lib/supabase/server'
 import { AnalysisPoller } from '@/features/analysis/components/AnalysisPoller'
 import { ToastOnMount } from '@/components/ui/toast-on-mount'
@@ -13,10 +14,11 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const { id } = await params
   const { from } = await searchParams
 
-  const [project, analysis, supabase] = await Promise.all([
+  const [project, analysis, supabase, integrations] = await Promise.all([
     getProject(id),
     getAnalysisByProject(id),
     createServerClient(),
+    getIntegrationsByProject(id),
   ])
   if (!project) notFound()
 
@@ -61,6 +63,20 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           <path d="M10 3v10M7 6l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+    },
+    {
+      href: `/projects/${id}/integrations`,
+      label: 'Data Sources',
+      description: 'Connect analytics & session platforms',
+      accent: 'hover:border-sky-400/60 hover:bg-sky-50/40',
+      iconBg: 'bg-sky-50',
+      iconColor: 'text-sky-600',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M10 3C6.13 3 3 6.13 3 10s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7z" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M10 7v6M7 10h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
     },
@@ -280,6 +296,48 @@ export default async function ProjectPage({ params, searchParams }: Props) {
                   </svg>
                 </Link>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Data Sources */}
+        {integrations.length > 0 && (
+          <div className="bg-white rounded-2xl border border-[var(--border)] px-7 py-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-sky-50 flex items-center justify-center">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="text-sky-600">
+                    <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/>
+                    <path d="M4 5h6M4 7h4M4 9h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <h2 className="text-xs font-semibold text-[var(--foreground-subtle)] uppercase tracking-wider">Data Sources</h2>
+              </div>
+              <Link
+                href={`/projects/${id}/integrations`}
+                className="text-xs text-[var(--primary)] hover:underline font-medium"
+              >
+                Manage
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {integrations.map(integration => (
+                <span
+                  key={integration.id}
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full border ${
+                    integration.status === 'connected'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      : integration.status === 'error'
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'bg-gray-50 border-gray-200 text-[var(--foreground-muted)]'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    integration.status === 'connected' ? 'bg-emerald-500' : integration.status === 'error' ? 'bg-red-500' : 'bg-gray-300'
+                  }`} />
+                  {integration.platform.replace(/_/g, ' ')}
+                </span>
+              ))}
             </div>
           </div>
         )}

@@ -10,6 +10,7 @@ export function buildAnalysisPrompt(
   project: Project,
   uploads: UploadSummary[],
   userResearchSummary?: string,
+  sessionInsights?: string[],
 ): string {
   const projectBlock = `## Project Context
 Name: ${project.name}
@@ -30,10 +31,14 @@ ${project.business_goal ? `Business goal: ${project.business_goal}` : ''}`
     ? `\n\n## User Research\n${userResearchSummary}`
     : ''
 
+  const sessionBlock = sessionInsights && sessionInsights.length > 0
+    ? `\n\n## Session Tool Insights\n${sessionInsights.join('\n\n')}`
+    : ''
+
   return `${projectBlock}
 
 ## Uploaded Data
-${uploadsBlock}${researchBlock}
+${uploadsBlock}${researchBlock}${sessionBlock}
 
 ## Task
 Analyze the above and generate prioritized experiment recommendations. Return valid JSON matching the schema: { recommendations: [...], summary?: string }`
