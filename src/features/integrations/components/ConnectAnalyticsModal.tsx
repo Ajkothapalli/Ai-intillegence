@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import type { z } from 'zod'
 import { platformCredentialSchemas } from '../schema'
 import { createIntegration, validateIntegrationCredentials } from '../actions'
 import type { Platform } from '../types'
@@ -60,18 +58,25 @@ export function ConnectAnalyticsModal({ platform, projectId, platformName, onClo
   const [submitting, setSubmitting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
-  const schema = platformCredentialSchemas[platform]
-  type FormData = z.infer<typeof schema>
-
-  const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  })
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<Record<string, string>>()
 
   const fields = getFieldsForPlatform(platform)
   const helpMap = FIELD_HELP[platform] ?? {}
 
+  function validateWithSchema(values: Record<string, string>): string | null {
+    const schema = platformCredentialSchemas[platform]
+    const result = schema.safeParse(values)
+    if (!result.success) return result.error.issues[0]?.message ?? 'Validation failed'
+    return null
+  }
+
   async function handleTest() {
-    const values = getValues() as Record<string, string>
+    const values = getValues()
+    const schemaError = validateWithSchema(values)
+    if (schemaError) {
+      setTestResult({ ok: false, message: schemaError })
+      return
+    }
     setValidating(true)
     setTestResult(null)
     const result = await validateIntegrationCredentials(platform, values)
@@ -83,9 +88,14 @@ export function ConnectAnalyticsModal({ platform, projectId, platformName, onClo
     }
   }
 
-  async function onSubmit(data: FormData) {
+  async function onSubmit(data: Record<string, string>) {
+    const schemaError = validateWithSchema(data)
+    if (schemaError) {
+      setTestResult({ ok: false, message: schemaError })
+      return
+    }
     setSubmitting(true)
-    const result = await createIntegration(projectId, platform, data as Record<string, string>)
+    const result = await createIntegration(projectId, platform, data)
     setSubmitting(false)
     if (result.success) {
       onSuccess()
@@ -122,7 +132,7 @@ export function ConnectAnalyticsModal({ platform, projectId, platformName, onClo
             {fields.map(field => {
               const label = field.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
               const isSecret = field.toLowerCase().includes('secret') || field.toLowerCase().includes('key') || field.toLowerCase().includes('token')
-              const fieldError = (errors as Record<string, { message?: string }>)[field]
+              const fieldError = errors[field]
               return (
                 <div key={field} className="space-y-1">
                   <label htmlFor={field} className="block text-xs font-semibold text-foreground">
@@ -131,7 +141,7 @@ export function ConnectAnalyticsModal({ platform, projectId, platformName, onClo
                   <input
                     id={field}
                     type={isSecret ? 'password' : 'text'}
-                    {...register(field as keyof FormData)}
+                    {...register(field)}
                     className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm text-foreground placeholder:text-[var(--foreground-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)]"
                     placeholder={label}
                   />

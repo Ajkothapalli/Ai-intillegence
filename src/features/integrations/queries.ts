@@ -8,7 +8,7 @@ export async function getIntegrationsByProject(projectId: string): Promise<SafeI
     .select('id, project_id, user_id, platform, status, last_synced_at, created_at, updated_at')
     .eq('project_id', projectId)
     .order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) return []
   return (data ?? []) as SafeIntegration[]
 }
 
