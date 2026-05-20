@@ -8,6 +8,7 @@ export type Project = {
   funnel_stages: string[] | null
   primary_metric: string | null
   business_goal: string | null
+  is_demo: boolean | null
   created_at: string
   updated_at: string
 }

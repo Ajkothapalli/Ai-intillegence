@@ -7,6 +7,7 @@ import type { AuthActionResult } from '@/features/auth/types'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { LoginPreview } from '@/app/(auth)/components/LoginPreview'
+import { LogoFull } from '@/components/logo'
 
 function FieldError({ message }: { message: string }) {
   return (
@@ -52,14 +53,7 @@ export default function LoginPage() {
       {/* ── Left panel ──────────────────────────────────────────── */}
       <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 flex flex-col justify-center px-10 py-12 bg-white">
 
-        <div className="flex items-center gap-2.5 mb-12">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[var(--shadow-primary)]">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2 8h3M8 2v12M11 5l3 3-3 3" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight">Experiment Intelligence</span>
-        </div>
+        <LogoFull variant="horizontal" theme="dark" className="mb-12" />
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Welcome back</h1>
@@ -140,9 +134,9 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-[var(--forest-50)] relative overflow-hidden px-10 py-10">
-        <div className="absolute top-[-80px] right-[-80px] w-72 h-72 rounded-full border-2 border-dashed border-[var(--forest-200)] opacity-50" />
-        <div className="absolute bottom-[-60px] left-[-60px] w-52 h-52 rounded-full border-2 border-dashed border-[var(--forest-200)] opacity-50" />
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-50 relative overflow-hidden px-10 py-10">
+        <div className="absolute top-[-120px] right-[-120px] w-96 h-96 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #196262 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #3bcfcf 0%, transparent 70%)' }} />
         <LoginPreview />
       </div>
 

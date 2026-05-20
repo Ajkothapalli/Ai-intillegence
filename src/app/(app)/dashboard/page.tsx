@@ -1,6 +1,14 @@
 import Link from 'next/link'
 import { getDashboardStats } from '@/features/projects/queries'
 import { DashboardCharts } from './DashboardCharts'
+import { getRingProgress } from '@/features/onboarding/rings'
+import { getStreak } from '@/features/onboarding/streaks'
+import { ProgressRings } from '@/features/onboarding/components/ProgressRings'
+import { StreakBadge } from '@/features/onboarding/components/StreakBadge'
+import { WelcomeBanner } from '@/features/onboarding/components/WelcomeBanner'
+import { createServerClient } from '@/lib/supabase/server'
+import { getUserExperienceState } from '@/lib/onboarding/userState'
+import { INDUSTRY_LABELS } from '@/lib/demo/demoData'
 
 function TrendBadge({ delta, unit = '%' }: { delta: number; unit?: string }) {
   if (delta === 0) {
@@ -43,7 +51,35 @@ function StatusBadge({ status }: { status: string | null }) {
 }
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats()
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const [stats, rings, streak, userState] = await Promise.all([
+    getDashboardStats(),
+    getRingProgress(),
+    user ? getStreak(supabase, user.id) : Promise.resolve({ current: 0, longest: 0, activeThisWeek: false }),
+    user ? getUserExperienceState(user.id) : Promise.resolve({ experience: 'rtue' as const }),
+  ])
+
+  // Industry label for FTUE banner copy
+  const rawIndustry = user?.user_metadata?.['industry']
+  const industryKey = typeof rawIndustry === 'string' ? rawIndustry : null
+  const industryLabel = industryKey && industryKey in INDUSTRY_LABELS
+    ? INDUSTRY_LABELS[industryKey as keyof typeof INDUSTRY_LABELS]
+    : 'your product'
+
+  // Demo project (for FTUE banners)
+  const demoProject = stats.demoProject
+
+  // Real project with completed analysis (for analysis_done stage)
+  const realProjectWithAnalysis = stats.feed.find(f => !f.isDemo && f.analysisStatus === 'completed')
+  // Any real project (for uploaded_data stage)
+  const anyRealProject = stats.feed.find(f => !f.isDemo)
+
+  const realProjectId = realProjectWithAnalysis?.id ?? anyRealProject?.id ?? null
+
+  // Streak at risk: has a streak but hasn't been active this week
+  const streakAtRisk = streak.current > 0 && !streak.activeThisWeek
 
   const statCards = [
     {
@@ -108,15 +144,56 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 space-y-8">
+    <div className="px-6 lg:px-8 xl:px-10 py-8 space-y-8">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
-        <p className="text-sm text-[var(--foreground-muted)] mt-1">
-          All-time metrics and 30-day activity across your experiments.
-        </p>
+      {/* FTUE: welcome banner — never dims content below */}
+      {userState.experience === 'ftue' && (
+        <WelcomeBanner
+          stage={userState.stage}
+          industry={industryLabel}
+          demoProjectId={demoProject?.id ?? null}
+          realProjectId={realProjectId}
+        />
+      )}
+
+      {/* RTUE: streak at risk nudge — only when streak > 0 and no action this week */}
+      {userState.experience === 'rtue' && streakAtRisk && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 flex items-center justify-between gap-4">
+          <span className="text-sm text-amber-800">
+            🔥 Keep your {streak.current}-week streak — do something this week
+          </span>
+          <Link
+            href="/projects/new"
+            className="shrink-0 inline-flex items-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 transition-colors"
+          >
+            Run analysis
+          </Link>
+        </div>
+      )}
+
+      {/* Dashboard header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <p className="text-sm text-[var(--foreground-muted)] mt-1">
+            All-time metrics and 30-day activity across your experiments.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <StreakBadge current={streak.current} longest={streak.longest} />
+          {userState.experience === 'rtue' && (
+            <Link
+              href="/projects/new"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-[var(--primary-hover)] transition-colors shadow-sm"
+            >
+              New experiment
+            </Link>
+          )}
+        </div>
       </div>
+
+      {/* Progress rings */}
+      <ProgressRings rings={rings} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -189,13 +266,19 @@ export default async function DashboardPage() {
                   href={`/projects/${item.id}`}
                   className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--forest-50)] transition-colors group"
                 >
-                  {/* Dot timeline indicator */}
                   <div className="w-2 h-2 rounded-full bg-[var(--primary)]/30 group-hover:bg-[var(--primary)] transition-colors shrink-0" />
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground group-hover:text-[var(--primary)] transition-colors truncate">
-                      {item.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-foreground group-hover:text-[var(--primary)] transition-colors truncate">
+                        {item.name}
+                      </p>
+                      {item.isDemo && (
+                        <span className="shrink-0 text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                          Demo
+                        </span>
+                      )}
+                    </div>
                     {item.primaryMetric && (
                       <p className="text-[11px] text-[var(--foreground-subtle)] mt-0.5 truncate">
                         Metric: <span className="font-medium text-[var(--primary)]">{item.primaryMetric}</span>

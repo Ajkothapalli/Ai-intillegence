@@ -63,7 +63,7 @@ export function AnalysisPoller({ analysisId, initialStatus, projectId }: Props) 
 
   if (status === 'completed') {
     return (
-      <div className="rounded-xl border border-[var(--forest-200)] bg-[var(--forest-50)] p-5 flex items-center justify-between">
+      <div aria-live="polite" className="rounded-xl border border-[var(--forest-200)] bg-[var(--forest-50)] p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-[var(--forest-500)] flex items-center justify-center shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -84,7 +84,7 @@ export function AnalysisPoller({ analysisId, initialStatus, projectId }: Props) 
 
   if (status === 'failed') {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-5 space-y-3">
+      <div aria-live="assertive" className="rounded-xl border border-red-200 bg-red-50 p-5 space-y-3">
         <p className="text-sm font-semibold text-red-700">Analysis failed</p>
         {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
         <Link
@@ -98,7 +98,7 @@ export function AnalysisPoller({ analysisId, initialStatus, projectId }: Props) 
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+    <div aria-live="polite" aria-busy="true" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
       <div className="flex items-center gap-4">
         <div className="relative w-8 h-8 shrink-0">
           <div className="absolute inset-0 rounded-full border-2 border-[var(--primary)]/20" />

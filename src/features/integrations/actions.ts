@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
 import { platformCredentialSchemas } from './schema'
 import type { Platform } from './types'
+import { withRetry } from '@/lib/integrations/retry'
+import { isAuthError } from '@/lib/integrations/errors'
+import { completeOnboardingStep } from '@/features/onboarding/actions'
 
 type ActionResult = { success: true } | { success: false; error: string }
 
@@ -29,6 +32,7 @@ export async function createIntegration(
   })
   if (error) return { success: false, error: error.message }
 
+  void completeOnboardingStep('connect_integration')
   revalidatePath(`/projects/${projectId}/integrations`)
   return { success: true }
 }
@@ -76,6 +80,15 @@ export async function validateIntegrationCredentials(
   return { success: true }
 }
 
+export async function getProjectsList(): Promise<{ id: string; name: string }[]> {
+  const supabase = await createServerClient()
+  const { data } = await supabase
+    .from('projects')
+    .select('id, name')
+    .order('created_at', { ascending: false })
+  return data ?? []
+}
+
 export async function triggerSync(integrationId: string, projectId: string): Promise<ActionResult> {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -99,14 +112,15 @@ export async function triggerSync(integrationId: string, projectId: string): Pro
   if (syncErr || !syncRow) return { success: false, error: 'Failed to create sync record' }
 
   try {
-    // Dynamic import to keep connectors server-side
     const { runAnalyticsSync } = await import('@/lib/integrations/analytics/runner')
-    const result = await runAnalyticsSync(
-      integration.platform as string,
-      integration.credentials as Record<string, string>,
-      projectId,
-      user.id,
-      supabase,
+    const result = await withRetry(() =>
+      runAnalyticsSync(
+        integration.platform as string,
+        integration.credentials as Record<string, string>,
+        projectId,
+        user.id,
+        supabase,
+      )
     )
 
     await supabase.from('integration_syncs').update({
@@ -116,6 +130,7 @@ export async function triggerSync(integrationId: string, projectId: string): Pro
 
     await supabase.from('integrations').update({
       status: 'connected',
+      error_message: null,
       last_synced_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq('id', integrationId)
@@ -124,14 +139,17 @@ export async function triggerSync(integrationId: string, projectId: string): Pro
     return { success: true }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Sync failed'
+    const status = isAuthError(err) ? 'error' : 'error'
     await supabase.from('integration_syncs').update({
       status: 'failed',
       error_message: message,
     }).eq('id', syncRow.id)
     await supabase.from('integrations').update({
-      status: 'error',
+      status,
+      error_message: message,
       updated_at: new Date().toISOString(),
     }).eq('id', integrationId)
+    revalidatePath(`/projects/${projectId}/integrations`)
     return { success: false, error: message }
   }
 }

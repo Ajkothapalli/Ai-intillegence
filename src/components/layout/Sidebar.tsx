@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/features/auth/actions'
 import { IllustratedAvatar } from '@/components/ui/illustrated-avatar'
+import { LogoMark, LogoFull } from '@/components/logo'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -89,14 +90,6 @@ function IconClose() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
       <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function IconLogo() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-      <path d="M2 8h3M8 2v12M11 5l3 3-3 3" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -365,12 +358,7 @@ export function Sidebar({ userEmail, userName }: Props) {
       >
         {/* Mobile drawer brand */}
         <div className="flex items-center gap-2.5 px-4 h-16 border-b border-black/5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-[var(--shadow-sm)]">
-            <IconLogo />
-          </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight flex-1">
-            Experiment Intelligence
-          </span>
+          <LogoFull variant="horizontal" theme="dark" className="flex-1" />
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
@@ -397,41 +385,29 @@ export function Sidebar({ userEmail, userName }: Props) {
         >
           <IconMenu />
         </button>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shadow-[var(--shadow-sm)]">
-            <IconLogo />
-          </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight">
-            Experiment Intelligence
-          </span>
-        </div>
+        <LogoFull variant="horizontal" theme="dark" />
       </header>
 
-      {/* ── Desktop pill sidebar ──────────────────────────────────── */}
-      {/* Rounded on ALL sides — floats inside the padded shell */}
+      {/* ── Desktop sidebar ───────────────────────────────────────── */}
       <nav
         id="main-sidebar"
         aria-label="Main navigation"
         className={cn(
-          'hidden lg:flex flex-col shrink-0 overflow-hidden',
-          'bg-[var(--forest-50)]',
-          'transition-[width,border-radius] duration-200 ease-in-out will-change-[width]',
-          collapsed ? 'w-[68px] rounded-full' : 'w-56 rounded-2xl',
+          'hidden lg:flex flex-col shrink-0 overflow-hidden h-full',
+          'bg-white border-r border-slate-200',
+          'transition-[width] duration-200 ease-in-out will-change-[width]',
+          collapsed ? 'w-[68px]' : 'w-60 xl:w-64',
         )}
       >
-        {/* Brand */}
+        {/* Brand — matches the top bar height (h-14) */}
         <div className={cn(
-          'flex items-center gap-2.5 h-16 shrink-0 border-b border-black/5 overflow-hidden',
+          'flex items-center h-14 shrink-0 border-b border-slate-200 overflow-hidden',
           collapsed ? 'justify-center px-0' : 'px-4',
         )}>
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-[var(--shadow-sm)]">
-            <IconLogo />
-          </div>
-          {!collapsed && (
-            <span className="text-sm font-semibold text-foreground tracking-tight whitespace-nowrap">
-              Experiment Intelligence
-            </span>
-          )}
+          {collapsed
+            ? <LogoMark className="w-8 h-8" />
+            : <LogoFull variant="horizontal" theme="dark" />
+          }
         </div>
 
         {/* Nav */}
@@ -439,7 +415,7 @@ export function Sidebar({ userEmail, userName }: Props) {
 
         {/* Collapse toggle */}
         <div className={cn(
-          'flex items-center border-t border-black/5 p-2',
+          'flex items-center border-t border-slate-100 p-2',
           collapsed ? 'justify-center' : 'justify-end',
         )}>
           <button
@@ -447,7 +423,7 @@ export function Sidebar({ userEmail, userName }: Props) {
             onClick={() => setCollapsed(c => !c)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!collapsed}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-subtle)] hover:bg-[var(--primary)]/8 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-subtle)] hover:bg-slate-100 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
           >
             <span className={cn('transition-transform duration-200', collapsed ? 'rotate-180' : '')}>
               <IconChevronsLeft />

@@ -31,7 +31,7 @@ export default async function ExperimentsPage({ searchParams }: Props) {
   const thumbMap = new Map(thumbnails.map(t => [t.id, t.url]))
 
   return (
-    <div className="max-w-4xl mx-auto px-6 lg:px-8 py-8">
+    <div className="px-6 lg:px-8 xl:px-10 py-8">
       {deleted === '1' && <ToastOnMount message="Experiment deleted" type="success" />}
 
       <div className="mb-8">

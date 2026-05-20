@@ -4,9 +4,10 @@ import type { DbRecommendation } from '../types'
 type Props = {
   recommendations: DbRecommendation[]
   summary?: string | null
+  screenshotUrlMap?: Map<string, string>
 }
 
-export function RecommendationList({ recommendations, summary }: Props) {
+export function RecommendationList({ recommendations, summary, screenshotUrlMap }: Props) {
   if (recommendations.length === 0) {
     return (
       <div className="text-center py-16 bg-[var(--surface)] rounded-xl border border-dashed border-[var(--border)]">
@@ -30,7 +31,11 @@ export function RecommendationList({ recommendations, summary }: Props) {
 
       <div className="space-y-4">
         {sorted.map(rec => (
-          <RecommendationCard key={rec.id} rec={rec} />
+          <RecommendationCard
+            key={rec.id}
+            rec={rec}
+            screenshotUrl={rec.screenshot_id && screenshotUrlMap ? screenshotUrlMap.get(rec.screenshot_id) : undefined}
+          />
         ))}
       </div>
     </div>

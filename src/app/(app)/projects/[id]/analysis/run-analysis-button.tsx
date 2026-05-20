@@ -7,7 +7,14 @@ import { runProjectAnalysis } from '@/features/analysis/actions'
 import { Button } from '@/components/ui/button'
 import { Alert } from '@/components/ui/alert'
 
-export function RunAnalysisButton({ projectId }: { projectId: string }) {
+interface Props {
+  projectId: string
+  remaining: number
+  allowed: boolean
+  resetAt: string | null
+}
+
+export function RunAnalysisButton({ projectId, remaining, allowed, resetAt }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [useDeep, setUseDeep] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -34,7 +41,7 @@ export function RunAnalysisButton({ projectId }: { projectId: string }) {
           type="checkbox"
           checked={useDeep}
           onChange={e => setUseDeep(e.target.checked)}
-          disabled={isPending}
+          disabled={isPending || !allowed}
           className="rounded border-[var(--border)] bg-[var(--input)] text-[var(--cobalt-500)] focus:ring-[var(--cobalt-500)]"
         />
         <span className="text-sm text-[var(--foreground-muted)]">
@@ -42,16 +49,23 @@ export function RunAnalysisButton({ projectId }: { projectId: string }) {
         </span>
       </label>
 
-      <Button onClick={handleRun} disabled={isPending} size="lg" variant="default">
+      <Button onClick={handleRun} disabled={isPending || !allowed} size="lg" variant="default">
         {isPending ? (
           <span className="flex items-center gap-2">
             <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
             Analyzing…
           </span>
         ) : (
-          '🤖 Run analysis'
+          'Run analysis'
         )}
       </Button>
+
+      {/* Rate limit status */}
+      <p className="text-xs text-[var(--foreground-subtle)]">
+        {allowed
+          ? `${remaining} of 10 daily analyses remaining`
+          : `Limit reached — resets at ${resetAt ? new Date(resetAt).toLocaleString() : '—'}`}
+      </p>
 
       {error && (
         <Alert variant="destructive">{error}</Alert>

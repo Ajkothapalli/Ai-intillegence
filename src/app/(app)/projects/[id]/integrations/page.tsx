@@ -48,7 +48,7 @@ export default async function IntegrationsPage({ params }: Props) {
   const connectedIntegrations = integrations.filter(i => i.status === 'connected')
 
   return (
-    <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 space-y-10">
+    <div className="px-6 lg:px-8 xl:px-10 py-8 space-y-10">
       <div>
         <Link
           href={`/projects/${id}`}

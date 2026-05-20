@@ -12,6 +12,7 @@ export interface Integration {
   platform: Platform
   credentials: Record<string, string>  // never return to client raw — scrub in queries
   status: IntegrationStatus
+  error_message: string | null
   last_synced_at: string | null
   created_at: string
   updated_at: string

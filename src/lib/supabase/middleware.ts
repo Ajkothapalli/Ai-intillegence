@@ -28,6 +28,12 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+
+  // Always allow auth callback and email verification through
+  if (pathname.startsWith('/auth/callback') || pathname.startsWith('/verify-email')) {
+    return supabaseResponse
+  }
+
   const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/projects')
 
   if (!user && isProtected) {

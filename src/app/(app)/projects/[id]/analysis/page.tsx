@@ -1,25 +1,43 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
-import { getAnalysisByProject } from '@/features/analysis/queries'
+import { getAnalysisByProject, getAnalysisHistory } from '@/features/analysis/queries'
+import { getRateLimitStatus } from '@/lib/rateLimit'
 import { RunAnalysisButton } from './run-analysis-button'
 import { Badge } from '@/components/ui/badge'
+import { createServerClient } from '@/lib/supabase/server'
 
 type Props = { params: Promise<{ id: string }> }
 
 export default async function AnalysisPage({ params }: Props) {
   const { id } = await params
-  const [project, analysis] = await Promise.all([getProject(id), getAnalysisByProject(id)])
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const [project, analysis, history] = await Promise.all([
+    getProject(id),
+    getAnalysisByProject(id),
+    getAnalysisHistory(id),
+  ])
   if (!project) notFound()
 
+  const rateLimit = user ? await getRateLimitStatus(user.id) : null
   const status = analysis?.status ?? null
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b border-[var(--border)] bg-[var(--surface)] px-8 py-4">
+      <header className="border-b border-[var(--border)] bg-[var(--surface)] px-8 py-4 flex items-center justify-between">
         <Link href={`/projects/${id}`} className="text-sm text-[var(--foreground-muted)] hover:text-foreground transition-colors">
           ← {project.name}
         </Link>
+        {history.length > 0 && (
+          <Link
+            href={`/projects/${id}/analysis/history`}
+            className="text-sm text-[var(--primary)] hover:underline font-medium"
+          >
+            View history ({history.length} {history.length === 1 ? 'analysis' : 'analyses'})
+          </Link>
+        )}
       </header>
 
       <div className="max-w-3xl mx-auto px-8 py-10 space-y-8">
@@ -36,7 +54,22 @@ export default async function AnalysisPage({ params }: Props) {
             <p className="text-sm text-[var(--foreground-muted)]">claude-sonnet-4-6 (standard) · claude-opus-4-7 (deep analysis)</p>
           </div>
 
-          <RunAnalysisButton projectId={id} />
+          {/* Rate limit warning */}
+          {rateLimit && !rateLimit.allowed && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-sm font-semibold text-amber-800">Daily limit reached</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Resets at {rateLimit.resetAt.toLocaleString()}
+              </p>
+            </div>
+          )}
+
+          <RunAnalysisButton
+            projectId={id}
+            remaining={rateLimit?.remaining ?? 10}
+            allowed={rateLimit?.allowed ?? true}
+            resetAt={rateLimit?.resetAt.toISOString() ?? null}
+          />
 
           {analysis && (
             <div className="mt-4 p-4 rounded-lg border border-[var(--border)] bg-[var(--background-elevated)]">
@@ -73,12 +106,22 @@ export default async function AnalysisPage({ params }: Props) {
                 </div>
               )}
               {status === 'completed' && (
-                <Link
-                  href={`/projects/${id}/recommendations`}
-                  className="mt-3 inline-block text-sm text-[var(--link)] hover:underline font-medium"
-                >
-                  View recommendations →
-                </Link>
+                <div className="mt-3 flex items-center gap-4 flex-wrap">
+                  <Link
+                    href={`/projects/${id}/recommendations`}
+                    className="text-sm text-[var(--link)] hover:underline font-medium"
+                  >
+                    View recommendations →
+                  </Link>
+                  {history.length >= 2 && (
+                    <Link
+                      href={`/projects/${id}/analysis/history`}
+                      className="text-sm text-[var(--foreground-muted)] hover:text-foreground transition-colors"
+                    >
+                      Compare with previous analysis →
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           )}

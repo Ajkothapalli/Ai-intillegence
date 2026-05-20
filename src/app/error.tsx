@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import Link from 'next/link'
 
 interface Props {
@@ -8,6 +10,9 @@ interface Props {
 }
 
 export default function RootError({ error, reset }: Props) {
+  useEffect(() => {
+    Sentry.captureException(error)
+  }, [error])
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="text-center space-y-4">

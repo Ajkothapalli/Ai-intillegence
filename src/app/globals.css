@@ -521,6 +521,16 @@
     font-feature-settings: 'tnum' 1, 'lnum' 1;
   }
 
+  /* Pointer cursor on all interactive elements — browsers default buttons to 'default' */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--forest-400) 35%, transparent);
     color: var(--ink-0);

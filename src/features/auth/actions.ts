@@ -21,18 +21,35 @@ export async function signUp(_prev: AuthActionResult | null, formData: FormData)
     return { success: false, error: issue.message, field: (issue.path[0] as AuthField) ?? 'form' }
   }
 
+  const industry = (formData.get('industry') as string | null) ?? 'saas_b2c'
+  const industryCustom = (formData.get('industry_custom') as string | null) ?? ''
+
   const supabase = await createServerClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.fullName } },
+    options: { data: { full_name: parsed.data.fullName, industry, industry_custom: industryCustom } },
   })
 
   if (error) {
     return { success: false, error: error.message, field: 'form' }
   }
 
-  redirect('/dashboard')
+  // No session — email verification required; callback route will seed demo
+  if (!data.session) {
+    redirect(`/verify-email?email=${encodeURIComponent(parsed.data.email)}`)
+  }
+
+  // Session returned immediately — seed demo project now
+  if (data.user) {
+    const { seedDemoProject } = await import('@/lib/demo/seedDemoProject')
+    const { count } = await supabase.from('projects').select('id', { count: 'exact', head: true }).eq('user_id', data.user.id)
+    if ((count ?? 0) === 0) {
+      await seedDemoProject(supabase, data.user.id, industry)
+    }
+  }
+
+  redirect('/dashboard?onboarding=true')
 }
 
 export async function signIn(_prev: AuthActionResult | null, formData: FormData): Promise<AuthActionResult> {

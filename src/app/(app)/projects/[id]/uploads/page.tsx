@@ -77,6 +77,16 @@ export default async function UploadsPage({ params }: Props) {
           maxCount={MAX_CSV_COUNT}
           cohortDimension={csvDimension ? { name: csvDimension.dimensionName, segments: csvDimension.segments } : undefined}
         />
+        <a
+          href="/api/templates/funnel-csv"
+          download
+          className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--primary)] hover:underline"
+        >
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path d="M5.5 1v6M2.5 5l3 3 3-3M1 10h9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Download template CSV
+        </a>
       </section>
 
       {/* ── Screenshots section ─────────────────────────────── */}

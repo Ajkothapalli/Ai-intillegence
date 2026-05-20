@@ -13,8 +13,36 @@ export type Analysis = {
 
 export type ScreenshotAnnotation = {
   screenshot_index: number
-  x: number // % from left
-  y: number // % from top
+  x: number
+  y: number
+}
+
+export type UIElement = {
+  id: string
+  label: string
+  location: 'top' | 'middle' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'
+  issue: string
+  current_state: string
+  bounding_hint: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+}
+
+export type ScreenshotAnalysis = {
+  screen_name: string
+  overall_assessment: string
+  friction_elements: UIElement[]
+  trust_elements: UIElement[]
+  clarity_elements: UIElement[]
+}
+
+export type TargetSegmentRef = {
+  segment_id: string
+  segment_name: string
+  relevance_reason: string
 }
 
 export type DbRecommendation = {
@@ -29,6 +57,11 @@ export type DbRecommendation = {
   evidence: string[]
   rationale: string | null
   screenshot_annotation: ScreenshotAnnotation | null
+  target_element: UIElement | null
+  screenshot_id: string | null
+  pm_summary: string | null
+  target_segments: TargetSegmentRef[] | null
+  estimated_reach: number | null
   created_at: string
   updated_at: string
 }

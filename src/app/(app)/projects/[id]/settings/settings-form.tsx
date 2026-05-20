@@ -7,13 +7,119 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { updateProject, deleteProject } from '@/features/projects/actions'
+import { createSchedule, deleteSchedule, updateSchedule } from '@/features/analysis/actions'
 import { updateProjectSchema, type UpdateProjectInput } from '@/features/projects/schema'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import type { Project } from '@/features/projects/types'
 
-export function SettingsForm({ project }: { project: Project }) {
+type AnalysisSchedule = {
+  id: string
+  frequency: 'daily' | 'weekly' | 'monthly'
+  enabled: boolean
+  use_deep_model: boolean
+  next_run_at: string
+}
+
+function ScheduleSection({ projectId, schedule }: { projectId: string; schedule: AnalysisSchedule | null }) {
+  const router = useRouter()
+  const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>(schedule?.frequency ?? 'weekly')
+  const [deepModel, setDeepModel] = useState(schedule?.use_deep_model ?? false)
+  const [saving, startSave] = useTransition()
+  const [removing, startRemove] = useTransition()
+
+  function handleSave() {
+    startSave(async () => {
+      const result = await createSchedule(projectId, frequency, deepModel)
+      if (result.success) { toast.success('Schedule saved'); router.refresh() }
+      else toast.error(result.error)
+    })
+  }
+
+  function handleToggle(enabled: boolean) {
+    startSave(async () => {
+      const result = await updateSchedule(projectId, { enabled })
+      if (result.success) router.refresh()
+      else toast.error(result.error)
+    })
+  }
+
+  function handleRemove() {
+    startRemove(async () => {
+      const result = await deleteSchedule(projectId)
+      if (result.success) { toast.success('Schedule removed'); router.refresh() }
+      else toast.error(result.error)
+    })
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[var(--border)] p-8 space-y-5">
+      <div>
+        <h2 className="text-base font-semibold text-foreground">Scheduled re-analysis</h2>
+        <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+          Automatically re-run AI analysis on a schedule using your latest uploads.
+        </p>
+      </div>
+
+      {schedule ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg bg-violet-50 border border-violet-200 px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-violet-800 capitalize">{schedule.frequency} analysis</p>
+              <p className="text-xs text-violet-600 mt-0.5">
+                Next run: {new Date(schedule.next_run_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {schedule.use_deep_model && ' · Deep model'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleToggle(!schedule.enabled)}
+                disabled={saving}
+                className={`h-7 px-3 rounded-full border text-xs font-semibold transition-colors ${schedule.enabled ? 'border-violet-300 text-violet-700 hover:bg-violet-100' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              >
+                {schedule.enabled ? 'Enabled' : 'Paused'}
+              </button>
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={removing}
+                className="h-7 px-3 rounded-full border border-red-200 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            {(['daily', 'weekly', 'monthly'] as const).map(f => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFrequency(f)}
+                className={`flex-1 py-2 rounded-lg border text-xs font-semibold capitalize transition-colors ${frequency === f ? 'bg-violet-600 text-white border-violet-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={deepModel} onChange={e => setDeepModel(e.target.checked)} className="accent-violet-600" />
+            <span className="text-sm text-slate-700">Use deep model (Opus — more thorough, slower)</span>
+          </label>
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Enable schedule'}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function SettingsForm({ project, schedule }: { project: Project; schedule: AnalysisSchedule | null }) {
   const router = useRouter()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, startDelete] = useTransition()
@@ -114,6 +220,9 @@ export function SettingsForm({ project }: { project: Project }) {
             {isSubmitting ? 'Saving…' : 'Save changes'}
           </Button>
         </form>
+
+        {/* ── Schedule ─────────────────────────────────────── */}
+        <ScheduleSection projectId={project.id} schedule={schedule} />
 
         {/* ── Danger zone ───────────────────────────────────── */}
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 space-y-4">

@@ -20,6 +20,7 @@ export type FeedItem = {
   analysisStatus: 'pending' | 'running' | 'completed' | 'failed' | null
   recommendationCount: number
   createdAt: string
+  isDemo: boolean
 }
 
 export type DashboardStats = {
@@ -33,6 +34,8 @@ export type DashboardStats = {
   confidenceDelta: number
   activityData: ActivityDay[]
   feed: FeedItem[]
+  demoProject: FeedItem | null
+  hasRealProject: boolean
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -75,7 +78,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     supabase.from('recommendations').select('confidence').gte('created_at', sixtyDaysAgo).lt('created_at', thirtyDaysAgo),
     supabase.from('projects').select('created_at').gte('created_at', thirtyDaysAgo),
     supabase.from('recommendations').select('created_at').gte('created_at', thirtyDaysAgo),
-    supabase.from('projects').select('id, name, created_at, primary_metric').order('created_at', { ascending: false }).limit(8),
+    supabase.from('projects').select('id, name, created_at, primary_metric, is_demo').order('created_at', { ascending: false }).limit(8),
   ])
 
   // Activity chart — 30 days
@@ -127,10 +130,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     analysisStatus: latestStatus.get(p.id) ?? null,
     recommendationCount: recCount.get(p.id) ?? 0,
     createdAt: p.created_at,
+    isDemo: (p.is_demo as boolean | null) ?? false,
   }))
 
   const currConf = avgConf(currConfRes.data ?? [])
   const prevConf = avgConf(prevConfRes.data ?? [])
+
+  const demoProject = feed.find(f => f.isDemo) ?? null
+  const hasRealProject = feed.some(f => !f.isDemo)
 
   return {
     totalProjects: totalProjectsRes.count ?? 0,
@@ -143,6 +150,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     confidenceDelta: currConf - prevConf,
     activityData,
     feed,
+    demoProject,
+    hasRealProject,
   }
 }
 

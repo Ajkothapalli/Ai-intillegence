@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@/lib/supabase/server'
+import { completeOnboardingStep } from '@/features/onboarding/actions'
+import { completeRingAction } from '@/features/onboarding/rings'
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -92,6 +94,8 @@ export async function createProject(data: CreateProjectInput): Promise<ProjectAc
 
   if (error) return { success: false, error: error.message }
 
+  await completeOnboardingStep('create_project')
+  void completeRingAction('experiments', 'create_project')
   redirect(`/projects/${row.id}?from=new`)
 }
 
@@ -191,6 +195,8 @@ export async function uploadFile(projectId: string, formData: FormData): Promise
   }
 
   revalidatePath(`/projects/${projectId}/uploads`)
+  void completeOnboardingStep('upload_data')
+  void completeRingAction('data', fileType === 'csv' ? 'upload_csv' : 'upload_screenshot')
 
   // Detect cohort segments in CSV uploads
   if (fileType === 'csv') {
@@ -306,6 +312,34 @@ export async function updateProject(
 
   revalidatePath(`/projects/${id}`)
   revalidatePath(`/projects/${id}/settings`)
+  return { success: true }
+}
+
+export async function saveFunnelMapping(
+  projectId: string,
+  templateId: string,
+  stageMappings: Record<string, string>,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated' }
+
+  // Verify project ownership
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!project) return { success: false, error: 'Project not found' }
+
+  const { error } = await supabase
+    .from('user_funnel_mappings')
+    .upsert({ project_id: projectId, template_id: templateId, stage_mappings: stageMappings },
+             { onConflict: 'project_id' })
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/projects/${projectId}`)
   return { success: true }
 }
 

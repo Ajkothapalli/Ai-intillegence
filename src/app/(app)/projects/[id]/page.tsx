@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation'
 import { getProject } from '@/features/projects/queries'
 import { getAnalysisByProject } from '@/features/analysis/queries'
 import { getIntegrationsByProject } from '@/features/integrations/queries'
+import { getSegmentsByProject } from '@/features/segments/queries'
 import { createServerClient } from '@/lib/supabase/server'
 import { AnalysisPoller } from '@/features/analysis/components/AnalysisPoller'
 import { ToastOnMount } from '@/components/ui/toast-on-mount'
+import { FunnelTemplateSetup } from '@/features/projects/components/FunnelTemplateSetup'
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string }> }
 
@@ -14,12 +16,16 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   const { id } = await params
   const { from } = await searchParams
 
-  const [project, analysis, supabase, integrations] = await Promise.all([
+  const [project, analysis, supabase, integrations, segments] = await Promise.all([
     getProject(id),
     getAnalysisByProject(id),
     createServerClient(),
     getIntegrationsByProject(id),
+    getSegmentsByProject(id),
   ])
+  const funnelTemplates = from === 'new'
+    ? (await supabase.from('funnel_templates').select('id, name, category, stages, industry_median_drop_off')).data
+    : null
   if (!project) notFound()
 
   const status = analysis?.status ?? null
@@ -59,6 +65,7 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       accent: 'hover:border-sky-400/60 hover:bg-sky-50/40',
       iconBg: 'bg-sky-50',
       iconColor: 'text-sky-600',
+      spotlightTarget: undefined as string | undefined,
       icon: (
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -67,22 +74,9 @@ export default async function ProjectPage({ params, searchParams }: Props) {
       ),
     },
     {
-      href: `/projects/${id}/integrations`,
-      label: 'Data Sources',
-      description: 'Connect analytics & session platforms',
-      accent: 'hover:border-sky-400/60 hover:bg-sky-50/40',
-      iconBg: 'bg-sky-50',
-      iconColor: 'text-sky-600',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M10 3C6.13 3 3 6.13 3 10s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7z" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M10 7v6M7 10h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ),
-    },
-    {
       href: `/projects/${id}/analysis`,
       label: 'Run analysis',
+      spotlightTarget: 'run-analysis' as string | undefined,
       description: 'AI generates experiment recommendations',
       status,
       accent: 'hover:border-[var(--primary)]/50 hover:bg-[var(--forest-50)]/60',
@@ -109,6 +103,24 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         </svg>
       ),
     },
+    {
+      href: `/projects/${id}/segments`,
+      label: 'Audience Segments',
+      description: segments.length > 0
+        ? `${segments.length} segment${segments.length === 1 ? '' : 's'} defined`
+        : 'Define who each experiment targets',
+      accent: 'hover:border-orange-400/60 hover:bg-orange-50/40',
+      iconBg: 'bg-orange-50',
+      iconColor: 'text-orange-600',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M2 17c0-3 2-5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="14" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
+          <path d="M10 17c0-2.5 1.8-4 4-4s4 1.5 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
   ]
 
   const statusConfig: Record<string, { label: string; className: string; dot?: boolean }> = {
@@ -121,6 +133,12 @@ export default async function ProjectPage({ params, searchParams }: Props) {
   return (
     <main className="min-h-screen bg-background">
       {from === 'new' && <ToastOnMount message="Project created" type="success" />}
+      {from === 'new' && funnelTemplates && funnelTemplates.length > 0 && (
+        <FunnelTemplateSetup
+          projectId={id}
+          templates={funnelTemplates as Array<{ id: string; name: string; category: string; stages: string[]; industry_median_drop_off: Record<string, number> }>}
+        />
+      )}
 
       {/* Header */}
       <header className="border-b border-[var(--border)] bg-white/80 backdrop-blur-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10">
@@ -133,6 +151,17 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           </svg>
           Experiments
         </Link>
+        <div className="flex items-center gap-2">
+        <Link
+          href={`/projects/${id}/share-links`}
+          className="flex items-center gap-1.5 text-xs font-medium text-[var(--foreground-muted)] hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-[var(--forest-50)]"
+        >
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M9.5 2a2 2 0 100 4 2 2 0 000-4zM4.5 5a2 2 0 100 4 2 2 0 000-4zM9.5 8a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M6.5 6.5l2-2M6.5 8.5l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          Share links
+        </Link>
         <Link
           href={`/projects/${id}/settings`}
           className="flex items-center gap-1.5 text-xs font-medium text-[var(--foreground-muted)] hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-[var(--forest-50)]"
@@ -143,9 +172,10 @@ export default async function ProjectPage({ params, searchParams }: Props) {
           </svg>
           Settings
         </Link>
+        </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-8 py-10 space-y-6">
+      <div className="px-6 lg:px-8 xl:px-10 py-8 space-y-6">
 
         {/* Project title + meta */}
         <div className="bg-white rounded-2xl border border-[var(--border)] px-7 py-6">
@@ -195,13 +225,14 @@ export default async function ProjectPage({ params, searchParams }: Props) {
         </div>
 
         {/* Action cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {actionCards.map(card => {
             const sc = card.status ? statusConfig[card.status] : null
             return (
               <Link
                 key={card.href}
                 href={card.href}
+                {...(card.spotlightTarget ? { 'data-spotlight-target': card.spotlightTarget } : {})}
                 className={`group bg-white rounded-2xl border border-[var(--border)] p-6 transition-all duration-150 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 ${card.accent}`}
               >
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${card.iconBg} ${card.iconColor} transition-transform group-hover:scale-110`}>

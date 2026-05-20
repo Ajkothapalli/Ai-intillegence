@@ -6,6 +6,29 @@ import type { PasswordResetResult } from '@/features/auth/actions'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ResetPasswordIllustration } from '@/components/illustrations/auth/ResetPasswordIllustration'
+
+const Logo = () => (
+  <div className="flex items-center gap-2.5 mb-12">
+    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[var(--shadow-primary)]">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M2 8h3M8 2v12M11 5l3 3-3 3" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+    <span className="text-sm font-semibold text-foreground tracking-tight">Experiment Intelligence</span>
+  </div>
+)
+
+const RightPanel = () => (
+  <div className="hidden lg:flex flex-1 items-center justify-center bg-[var(--forest-50)] relative overflow-hidden px-10 py-10">
+    <div className="absolute top-[-80px] right-[-80px] w-72 h-72 rounded-full border-2 border-dashed border-[var(--forest-200)] opacity-50" />
+    <div className="absolute bottom-[-60px] left-[-60px] w-52 h-52 rounded-full border-2 border-dashed border-[var(--forest-200)] opacity-50" />
+    <div className="flex flex-col items-center gap-6 max-w-sm">
+      <ResetPasswordIllustration className="w-80 h-60" />
+      <p className="text-center text-sm text-slate-500 italic">Fresh start — choose a strong password and get back to experimenting.</p>
+    </div>
+  </div>
+)
 
 export default function ResetPasswordPage() {
   const [state, formAction, isPending] = useActionState<PasswordResetResult | null, FormData>(
@@ -26,7 +49,6 @@ export default function ResetPasswordPage() {
     }
   }, [state])
 
-  // Exchange PKCE code for session on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
@@ -46,13 +68,17 @@ export default function ResetPasswordPage() {
 
   if (sessionError) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[var(--forest-50)] px-4">
-        <div className="w-full max-w-sm bg-white rounded-2xl border border-[var(--border)] shadow-[var(--shadow-md)] p-8 text-center space-y-4">
-          <p className="text-sm font-semibold text-[var(--rose-600)]">{sessionError}</p>
-          <a href="/forgot-password" className="text-sm text-[var(--link)] hover:underline">
-            Request a new reset link
-          </a>
+      <main className="min-h-screen flex">
+        <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 flex flex-col justify-center px-10 py-12 bg-white">
+          <Logo />
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-[var(--rose-600)]">{sessionError}</p>
+            <a href="/forgot-password" className="text-sm text-[var(--link)] hover:underline">
+              Request a new reset link
+            </a>
+          </div>
         </div>
+        <RightPanel />
       </main>
     )
   }
@@ -66,21 +92,15 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[var(--forest-50)] px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex items-center gap-2.5 mb-10 justify-center">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[var(--shadow-primary)]">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2 8h3M8 2v12M11 5l3 3-3 3" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight">Experiment Intelligence</span>
-        </div>
+    <main className="min-h-screen flex">
+      {/* Left panel */}
+      <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 flex flex-col justify-center px-10 py-12 bg-white">
+        <Logo />
 
-        <div className="bg-white rounded-2xl border border-[var(--border)] shadow-[var(--shadow-md)] p-8 space-y-6">
+        <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Set new password</h1>
-            <p className="text-sm text-[var(--foreground-muted)] mt-1">Choose a strong password for your account.</p>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Set new password</h1>
+            <p className="text-sm text-[var(--foreground-muted)]">Choose a strong password for your account.</p>
           </div>
 
           <form action={formAction} className="space-y-4">
@@ -131,6 +151,8 @@ export default function ResetPasswordPage() {
           </form>
         </div>
       </div>
+
+      <RightPanel />
     </main>
   )
 }

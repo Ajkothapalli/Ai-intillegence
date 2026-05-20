@@ -1,4 +1,12 @@
 import type { NormalisedFunnelData } from './types'
+import { IntegrationAuthError, IntegrationRateLimitError, IntegrationNotFoundError } from '@/lib/integrations/errors'
+
+function throwTyped(status: number, body: string): never {
+  if (status === 401 || status === 403) throw new IntegrationAuthError('Pendo', status)
+  if (status === 429) throw new IntegrationRateLimitError('Pendo')
+  if (status === 404) throw new IntegrationNotFoundError('Pendo', 'account')
+  throw new Error(`Pendo request failed (${status}): ${body.slice(0, 200)}`)
+}
 
 interface PendoCreds {
   integration_key: string
@@ -10,10 +18,7 @@ export async function validateCredentials(creds: Record<string, string>): Promis
     headers: { 'x-pendo-integration-key': c.integration_key, Accept: 'application/json' },
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Pendo validation failed (${res.status}): ${body.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped(res.status, await res.text())
   return true
 }
 
@@ -44,10 +49,7 @@ export async function fetchFunnelData(creds: Record<string, string>): Promise<No
     body,
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const resBody = await res.text()
-    throw new Error(`Pendo fetch failed (${res.status}): ${resBody.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped(res.status, await res.text())
   const json = await res.json() as Array<{ type?: string; count?: number }>
   const steps = Array.isArray(json) ? json : []
   const stages = steps.map((s, idx) => ({

@@ -1,4 +1,12 @@
 import type { NormalisedFunnelData } from './types'
+import { IntegrationAuthError, IntegrationRateLimitError, IntegrationNotFoundError } from '@/lib/integrations/errors'
+
+function throwTyped(platform: string, status: number, body: string): never {
+  if (status === 401 || status === 403) throw new IntegrationAuthError(platform, status)
+  if (status === 429) throw new IntegrationRateLimitError(platform)
+  if (status === 404) throw new IntegrationNotFoundError(platform, 'project')
+  throw new Error(`${platform} request failed (${status}): ${body.slice(0, 200)}`)
+}
 
 interface MixpanelCreds {
   project_id: string
@@ -17,10 +25,7 @@ export async function validateCredentials(creds: Record<string, string>): Promis
     `https://mixpanel.com/api/2.0/engage?project_id=${encodeURIComponent(c.project_id)}&limit=1`,
     { headers: { Authorization: buildAuth(c), Accept: 'application/json' }, cache: 'no-store' },
   )
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Mixpanel validation failed (${res.status}): ${body.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped('Mixpanel', res.status, await res.text())
   return true
 }
 
@@ -33,10 +38,7 @@ export async function fetchFunnelData(creds: Record<string, string>): Promise<No
     headers: { Authorization: buildAuth(c), Accept: 'application/json' },
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Mixpanel fetch failed (${res.status}): ${body.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped('Mixpanel', res.status, await res.text())
   const json = await res.json() as { data?: { steps?: Array<{ event: string; count: number; avg_time?: number }> } }
   const steps = json.data?.steps ?? []
   const stages = steps.map((s, idx) => ({

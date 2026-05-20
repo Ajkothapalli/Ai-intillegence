@@ -1,4 +1,12 @@
 import type { NormalisedFunnelData } from './types'
+import { IntegrationAuthError, IntegrationRateLimitError, IntegrationNotFoundError } from '@/lib/integrations/errors'
+
+function throwTyped(status: number, body: string): never {
+  if (status === 401 || status === 403) throw new IntegrationAuthError('Segment', status)
+  if (status === 429) throw new IntegrationRateLimitError('Segment')
+  if (status === 404) throw new IntegrationNotFoundError('Segment', 'workspace')
+  throw new Error(`Segment request failed (${status}): ${body.slice(0, 200)}`)
+}
 
 interface SegmentCreds {
   workspace_slug: string
@@ -11,10 +19,7 @@ export async function validateCredentials(creds: Record<string, string>): Promis
     headers: { Authorization: `Bearer ${c.access_token}`, Accept: 'application/json' },
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Segment validation failed (${res.status}): ${body.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped(res.status, await res.text())
   return true
 }
 
@@ -25,10 +30,7 @@ export async function fetchFunnelData(creds: Record<string, string>): Promise<No
     headers: { Authorization: `Bearer ${c.access_token}`, Accept: 'application/json' },
     cache: 'no-store',
   })
-  if (!res.ok) {
-    const resBody = await res.text()
-    throw new Error(`Segment fetch failed (${res.status}): ${resBody.slice(0, 200)}`)
-  }
+  if (!res.ok) throwTyped(res.status, await res.text())
   // Segment doesn't have a native funnel API — return event plan as stages
   const json = await res.json() as {
     tracking_plans?: Array<{ display_name?: string }>
