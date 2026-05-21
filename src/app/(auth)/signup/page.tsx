@@ -84,9 +84,9 @@ export default function SignupPage() {
     <main className="min-h-screen flex">
 
       {/* ── Left panel ──────────────────────────────────────────── */}
-      <div className="w-full lg:w-[520px] xl:w-[560px] shrink-0 flex flex-col justify-center px-10 py-12 bg-white overflow-y-auto">
+      <div className="w-full lg:w-[520px] xl:w-[560px] shrink-0 flex flex-col justify-center px-10 py-12 bg-[var(--surface)] overflow-y-auto">
 
-        <LogoFull variant="horizontal" theme="dark" className="mb-10" />
+        <LogoFull variant="horizontal" theme="light" className="mb-10" />
 
         <div className="mb-7">
           <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Create account</h1>
@@ -160,12 +160,12 @@ export default function SignupPage() {
                   if (e.target.value !== 'other') setOtherDescription('')
                 }}
                 className={[
-                  'w-full appearance-none rounded-lg border px-3.5 py-2.5 pr-9 text-sm bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-violet-400',
+                  'w-full appearance-none rounded-lg border px-3.5 py-2.5 pr-9 text-sm bg-[var(--input)] text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30',
                   industryError
-                    ? 'border-[var(--rose-600)] text-foreground'
+                    ? 'border-[var(--rose-500)]'
                     : selectedIndustry
-                      ? 'border-violet-400 text-foreground'
-                      : 'border-slate-200 text-[var(--foreground-subtle)]',
+                      ? 'border-[var(--primary)]'
+                      : 'border-[var(--border)]',
                 ].join(' ')}
               >
                 <option value="" disabled>Select your product type…</option>
@@ -243,10 +243,9 @@ export default function SignupPage() {
       </div>
 
       {/* ── Right panel ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-50 relative overflow-hidden px-10 py-10">
-        {/* Soft violet glow blobs */}
-        <div className="absolute top-[-120px] right-[-120px] w-96 h-96 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-[var(--background)] relative overflow-hidden px-10 py-10">
+        <div className="absolute top-[-120px] right-[-120px] w-96 h-96 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }} />
         <SignupPreview />
       </div>
 

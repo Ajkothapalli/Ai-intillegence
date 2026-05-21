@@ -51,9 +51,9 @@ export default function LoginPage() {
     <main className="min-h-screen flex">
 
       {/* ── Left panel ──────────────────────────────────────────── */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 flex flex-col justify-center px-10 py-12 bg-white">
+      <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 flex flex-col justify-center px-10 py-12 bg-[var(--surface)]">
 
-        <LogoFull variant="horizontal" theme="dark" className="mb-12" />
+        <LogoFull variant="horizontal" theme="light" className="mb-12" />
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground tracking-tight mb-1">Welcome back</h1>
@@ -134,9 +134,9 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right panel ─────────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-50 relative overflow-hidden px-10 py-10">
-        <div className="absolute top-[-120px] right-[-120px] w-96 h-96 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #196262 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #3bcfcf 0%, transparent 70%)' }} />
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-[var(--background)] relative overflow-hidden px-10 py-10">
+        <div className="absolute top-[-120px] right-[-120px] w-96 h-96 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-72 h-72 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }} />
         <LoginPreview />
       </div>
 

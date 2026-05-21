@@ -155,8 +155,8 @@ function NavList({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-1',
                 collapsed ? 'justify-center px-0' : 'px-3',
                 active
-                  ? 'bg-primary text-white shadow-[0_1px_6px_rgba(25,98,98,0.35)]'
-                  : 'text-[var(--foreground-muted)] hover:bg-[var(--primary)]/8 hover:text-foreground',
+                  ? 'bg-primary text-white shadow-[var(--shadow-primary)]'
+                  : 'text-[var(--foreground-muted)] hover:bg-white/6 hover:text-foreground',
               )}
             >
               <span className="shrink-0">{item.icon}</span>
@@ -190,12 +190,12 @@ function ProfilePopover({
 
   return (
     <div
-      className="absolute bottom-full left-0 right-0 mb-2 mx-2 z-50 bg-white rounded-xl border border-[var(--border)] shadow-[0_8px_24px_rgba(0,0,0,0.12)] overflow-hidden"
+      className="absolute bottom-full left-0 right-0 mb-2 mx-2 z-50 bg-[var(--popover)] rounded-xl border border-[var(--border)] shadow-[var(--shadow-lg)] overflow-hidden"
       role="menu"
       aria-label="Profile menu"
     >
       {/* User info header */}
-      <div className="px-3 py-3 border-b border-[var(--border)] bg-[var(--forest-50)]/40">
+      <div className="px-3 py-3 border-b border-[var(--border)] bg-white/4">
         <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
         <p className="text-[10px] text-[var(--foreground-subtle)] truncate mt-0.5">{userEmail}</p>
       </div>
@@ -206,7 +206,7 @@ function ProfilePopover({
           href="/profile"
           onClick={onClose}
           role="menuitem"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-[var(--forest-50)] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-white/6 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
         >
           <IconUser />
           <span>Profile</span>
@@ -219,7 +219,7 @@ function ProfilePopover({
           <button
             type="submit"
             role="menuitem"
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-red-50 hover:text-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground-muted)] hover:bg-[rgba(224,51,96,0.12)] hover:text-[var(--rose-400)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
           >
             <IconSignOut />
             <span>Sign out</span>
@@ -263,7 +263,7 @@ function UserFooter({
 
   if (collapsed) {
     return (
-      <div ref={ref} className="relative flex flex-col items-center p-2 border-t border-black/5">
+      <div ref={ref} className="relative flex flex-col items-center p-2 border-t border-[var(--sidebar-border)]">
         <ProfilePopover userEmail={userEmail} userName={userName} open={open} onClose={() => setOpen(false)} />
         <button
           type="button"
@@ -280,7 +280,7 @@ function UserFooter({
   }
 
   return (
-    <div ref={ref} className="relative p-3 border-t border-black/5">
+    <div ref={ref} className="relative p-3 border-t border-[var(--sidebar-border)]">
       <ProfilePopover userEmail={userEmail} userName={userName} open={open} onClose={() => setOpen(false)} />
       <button
         type="button"
@@ -288,7 +288,7 @@ function UserFooter({
         aria-label="Open profile menu"
         aria-expanded={open}
         aria-haspopup="menu"
-        className="w-full flex items-center gap-2.5 rounded-xl p-1.5 -mx-1.5 hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 group text-left"
+        className="w-full flex items-center gap-2.5 rounded-xl p-1.5 -mx-1.5 hover:bg-white/6 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 group text-left"
       >
         <IllustratedAvatar seed={userEmail} size={36} />
         <div className="flex-1 min-w-0">
@@ -351,19 +351,19 @@ export function Sidebar({ userEmail, userName }: Props) {
           'fixed z-50 lg:hidden',
           'top-3 bottom-3 left-3 w-64',
           'flex flex-col rounded-2xl overflow-hidden',
-          'bg-[var(--forest-50)] shadow-[0_8px_40px_rgba(0,0,0,0.18)]',
+          'bg-[var(--sidebar)] shadow-[var(--shadow-xl)]',
           'transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-[calc(100%+12px)]',
         )}
       >
         {/* Mobile drawer brand */}
-        <div className="flex items-center gap-2.5 px-4 h-16 border-b border-black/5 shrink-0">
-          <LogoFull variant="horizontal" theme="dark" className="flex-1" />
+        <div className="flex items-center gap-2.5 px-4 h-16 border-b border-white/6 shrink-0">
+          <LogoFull variant="horizontal" theme="light" className="flex-1" />
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
             aria-label="Close navigation"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-muted)] hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-subtle)] hover:bg-white/6 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
           >
             <IconClose />
           </button>
@@ -374,18 +374,18 @@ export function Sidebar({ userEmail, userName }: Props) {
       </div>
 
       {/* ── Mobile top bar ────────────────────────────────────────── */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 z-30 flex items-center gap-3 px-4 bg-white/80 backdrop-blur-md border-b border-black/5">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 z-30 flex items-center gap-3 px-4 bg-[var(--sidebar)]/90 backdrop-blur-md border-b border-[var(--border)]">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
           aria-expanded={mobileOpen}
           aria-controls="main-sidebar"
-          className="flex items-center justify-center w-9 h-9 rounded-xl text-[var(--foreground-muted)] hover:bg-[var(--forest-50)] hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-[var(--foreground-muted)] hover:bg-white/6 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
         >
           <IconMenu />
         </button>
-        <LogoFull variant="horizontal" theme="dark" />
+        <LogoFull variant="horizontal" theme="light" />
       </header>
 
       {/* ── Desktop sidebar ───────────────────────────────────────── */}
@@ -394,19 +394,19 @@ export function Sidebar({ userEmail, userName }: Props) {
         aria-label="Main navigation"
         className={cn(
           'hidden lg:flex flex-col shrink-0 overflow-hidden h-full',
-          'bg-white border-r border-slate-200',
+          'bg-[var(--sidebar)] border-r border-[var(--sidebar-border)]',
           'transition-[width] duration-200 ease-in-out will-change-[width]',
           collapsed ? 'w-[68px]' : 'w-60 xl:w-64',
         )}
       >
         {/* Brand — matches the top bar height (h-14) */}
         <div className={cn(
-          'flex items-center h-14 shrink-0 border-b border-slate-200 overflow-hidden',
+          'flex items-center h-14 shrink-0 border-b border-[var(--sidebar-border)] overflow-hidden',
           collapsed ? 'justify-center px-0' : 'px-4',
         )}>
           {collapsed
             ? <LogoMark className="w-8 h-8" />
-            : <LogoFull variant="horizontal" theme="dark" />
+            : <LogoFull variant="horizontal" theme="light" />
           }
         </div>
 
@@ -415,7 +415,7 @@ export function Sidebar({ userEmail, userName }: Props) {
 
         {/* Collapse toggle */}
         <div className={cn(
-          'flex items-center border-t border-slate-100 p-2',
+          'flex items-center border-t border-[var(--sidebar-border)] p-2',
           collapsed ? 'justify-center' : 'justify-end',
         )}>
           <button
@@ -423,7 +423,7 @@ export function Sidebar({ userEmail, userName }: Props) {
             onClick={() => setCollapsed(c => !c)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!collapsed}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-subtle)] hover:bg-slate-100 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[var(--foreground-subtle)] hover:bg-white/6 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30"
           >
             <span className={cn('transition-transform duration-200', collapsed ? 'rotate-180' : '')}>
               <IconChevronsLeft />

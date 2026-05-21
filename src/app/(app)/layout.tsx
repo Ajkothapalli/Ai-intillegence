@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const notifications = await getNotifications()
 
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-slate-100">
+    <div className="h-screen w-full flex overflow-hidden bg-[var(--background)]">
 
       <Sidebar userEmail={email} userName={userName} />
 
@@ -30,12 +30,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex flex-col flex-1 min-w-0 h-full">
 
         {/* Top bar — full width of remaining space, desktop only */}
-        <div className="hidden lg:flex items-center justify-end gap-2 h-14 px-6 xl:px-8 bg-white/95 backdrop-blur-sm border-b border-[var(--border)] flex-shrink-0 sticky top-0 z-20">
+        <div className="hidden lg:flex items-center justify-end gap-2 h-14 px-6 xl:px-8 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border)] flex-shrink-0 sticky top-0 z-20">
           <NotificationBell notifications={notifications} />
           <Link
             href="/projects/new"
             data-spotlight-target="new-experiment"
-            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-sm)] transition-all hover:bg-[var(--primary-hover)] hover:-translate-y-px active:translate-y-0"
+            className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-primary)] transition-all hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-primary-hover)] active:translate-y-0"
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
               <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Mobile top bar content (notification + CTA) — sits below Sidebar's fixed mobile bar */}
-        <div className="lg:hidden flex items-center justify-end gap-2 h-10 px-4 bg-white border-b border-[var(--border)] flex-shrink-0 sticky top-14 z-20">
+        <div className="lg:hidden flex items-center justify-end gap-2 h-10 px-4 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border)] flex-shrink-0 sticky top-14 z-20">
           <NotificationBell notifications={notifications} />
           <Link
             href="/projects/new"
@@ -63,7 +63,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 min-h-0 overflow-y-auto focus-visible:outline-none bg-white pt-14 lg:pt-0"
+          className="flex-1 min-h-0 overflow-y-auto focus-visible:outline-none bg-[var(--background)] pt-14 lg:pt-0"
         >
           {children}
         </main>

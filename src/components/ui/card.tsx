@@ -4,7 +4,7 @@ function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-[var(--border)] bg-white text-[var(--card-foreground)]',
+        'rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)]',
         'shadow-[var(--shadow-sm)]',
         'transition-[box-shadow,border-color] duration-200 [transition-timing-function:var(--ease-out)]',
         className
@@ -18,8 +18,8 @@ function CardGlass({ className, ...props }: React.HTMLAttributes<HTMLDivElement>
   return (
     <div
       className={cn(
-        'rounded-xl border border-[var(--forest-200)]',
-        'bg-[var(--forest-50)]/80 backdrop-blur-md',
+        'rounded-xl border border-white/10',
+        'bg-white/5 backdrop-blur-md',
         'text-[var(--card-foreground)] shadow-[var(--shadow-md)]',
         'transition-[box-shadow,border-color] duration-200 [transition-timing-function:var(--ease-out)]',
         className

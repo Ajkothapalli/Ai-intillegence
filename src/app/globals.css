@@ -252,124 +252,154 @@
   --ink-600:  #2e2e42;
 
   /* ═══════════════════════════════════════════════════════════
-     SEMANTIC TOKENS — white base, deep teal primary (#196262)
+     SEMANTIC TOKENS — dark base, violet primary (Midjourney-inspired)
      ═══════════════════════════════════════════════════════════ */
 
-  /* Surfaces — white canvas, light grey elevation */
-  --background:           #ffffff;            /* pure white page canvas */
-  --background-elevated:  #f4f4f5;            /* hover-lift bg, row highlights */
-  --surface:              #f9f9fb;            /* cards on white page */
-  --surface-raised:       #ffffff;            /* modals, dropdowns (white float) */
-  --surface-overlay:      oklch(0 0 0 / 0.45);
+  /* Surfaces — dark canvas */
+  --background:           #0d0d12;            /* near-black, violet-tinted */
+  --background-elevated:  #141419;            /* hover rows, alt backgrounds */
+  --surface:              #18181f;            /* card surfaces */
+  --surface-raised:       #1e1e28;            /* modals, dropdowns */
+  --surface-overlay:      oklch(0 0 0 / 0.65);
 
-  /* Foreground — near-black typography */
-  --foreground:          #09090b;             /* zinc-950 near-black */
-  --foreground-muted:    #3f3f47;             /* zinc-700 secondary text */
-  --foreground-subtle:   #71717a;             /* zinc-500 tertiary / placeholders */
-  --foreground-disabled: #a1a1aa;             /* zinc-400 disabled */
+  /* Foreground — near-white typography */
+  --foreground:          #f0f0f8;             /* cool near-white */
+  --foreground-muted:    #8888a0;             /* secondary text */
+  --foreground-subtle:   #55556a;             /* tertiary / placeholders */
+  --foreground-disabled: #3a3a4e;             /* disabled */
 
-  /* Primary action = #196262 deep teal */
-  --primary:             #196262;
-  --primary-hover:       #1f7a7a;
-  --primary-active:      #114646;
+  /* Primary action = violet */
+  --primary:             #7c3aed;
+  --primary-hover:       #8b4fff;             /* brighter on hover */
+  --primary-active:      #6724e0;             /* deeper on press */
   --primary-foreground:  #ffffff;
 
-  /* Brand = forest-400 bright teal accent */
-  --brand:               var(--forest-400);   /* #3bcfcf — fills, icons, indicators */
-  --brand-hover:         var(--forest-500);   /* #29a3a3 — darker on hover */
-  --brand-subtle:        var(--forest-50);    /* #effbfb — pale teal wash */
+  /* Brand = forest-400 bright teal (kept as secondary accent) */
+  --brand:               var(--forest-400);   /* #3bcfcf */
+  --brand-hover:         var(--forest-500);   /* #29a3a3 */
+  --brand-subtle:        rgba(59,207,207,0.08);
   --brand-foreground:    #09090b;
 
-  /* Link — primary color for all inline text links */
-  --link:                var(--primary);      /* #196262 deep teal */
-  --link-hover:          var(--primary-hover);/* #1f7a7a */
+  /* Link — lighter violet for readability on dark */
+  --link:                #a78bfa;
+  --link-hover:          #c4b5fd;
 
   /* Accent = ember orange */
   --accent:              var(--ember-500);    /* #ed8020 */
-  --accent-hover:        var(--ember-600);    /* #cf6214 */
-  --accent-subtle:       var(--ember-50);     /* #fff5e6 */
+  --accent-hover:        var(--ember-400);    /* #f4a040 */
+  --accent-subtle:       rgba(237,128,32,0.10);
   --accent-foreground:   #09090b;
 
   /* Muted / secondary */
-  --secondary:           #f4f4f5;
-  --secondary-foreground:#3f3f47;
-  --muted:               #f4f4f5;
-  --muted-foreground:    #71717a;
+  --secondary:           #1e1e28;
+  --secondary-foreground:#f0f0f8;
+  --muted:               #1a1a22;
+  --muted-foreground:    #8888a0;
 
-  /* Feedback — darker shades for text contrast on white */
-  --success:             var(--forest-700);   /* #196262 — deep teal text */
-  --success-subtle:      var(--forest-50);    /* #effbfb */
+  /* Feedback */
+  --success:             var(--forest-400);
+  --success-subtle:      rgba(59,207,207,0.08);
   --success-foreground:  #09090b;
-  --warning:             var(--ember-700);    /* #b04810 — dark amber text */
-  --warning-subtle:      var(--ember-50);     /* #fff5e6 */
+  --warning:             var(--ember-400);
+  --warning-subtle:      rgba(244,160,64,0.10);
   --warning-foreground:  #09090b;
-  --destructive:         var(--rose-500);     /* #e03360 */
-  --destructive-subtle:  var(--rose-50);      /* #fef1f4 */
+  --destructive:         var(--rose-500);
+  --destructive-subtle:  rgba(224,51,96,0.12);
   --destructive-foreground: #ffffff;
-  --info:                var(--cobalt-600);   /* #2750c8 — dark cobalt text */
-  --info-subtle:         var(--cobalt-50);    /* #eaf3ff */
+  --info:                var(--cobalt-400);
+  --info-subtle:         rgba(80,131,222,0.10);
   --info-foreground:     #09090b;
 
-  /* Borders — 4-step from hairline to strong */
-  --border-hairline:     #f0f0f1;
-  --border:              #e4e4e7;
-  --border-strong:       #d4d4d8;
-  --border-stronger:     #a1a1aa;
-  --border-focus:        #196262;
+  /* Borders — white-on-dark */
+  --border-hairline:     rgba(255,255,255,0.04);
+  --border:              rgba(255,255,255,0.08);
+  --border-strong:       rgba(255,255,255,0.14);
+  --border-stronger:     rgba(255,255,255,0.22);
+  --border-focus:        #7c3aed;
 
   /* Form */
-  --input:               #ffffff;
-  --input-hover:         #f9f9fb;
-  --ring:                #196262;             /* deep teal ring on white */
+  --input:               rgba(255,255,255,0.05);
+  --input-hover:         rgba(255,255,255,0.08);
+  --ring:                #7c3aed;
 
   /* Card / popover */
-  --card:                #ffffff;
-  --card-foreground:     #09090b;
-  --popover:             #ffffff;
-  --popover-foreground:  #09090b;
+  --card:                #18181f;
+  --card-foreground:     #f0f0f8;
+  --popover:             #1e1e28;
+  --popover-foreground:  #f0f0f8;
 
-  /* Charts — keep vibrant for data viz on white */
-  --chart-1: var(--forest-500);
-  --chart-2: var(--cobalt-500);
-  --chart-3: var(--ember-500);
-  --chart-4: var(--violet-500);
-  --chart-5: var(--teal-500);
+  /* Charts — vibrant on dark */
+  --chart-1: var(--forest-400);
+  --chart-2: var(--cobalt-400);
+  --chart-3: var(--ember-400);
+  --chart-4: var(--violet-400);
+  --chart-5: var(--teal-400);
 
-  /* Sidebar */
-  --sidebar:                   #f9f9fb;
-  --sidebar-foreground:        #09090b;
-  --sidebar-primary:           #196262;
+  /* Sidebar — slightly darker than background */
+  --sidebar:                   #0a0a0f;
+  --sidebar-foreground:        #f0f0f8;
+  --sidebar-primary:           #7c3aed;
   --sidebar-primary-foreground:#ffffff;
-  --sidebar-accent:            #f4f4f5;
-  --sidebar-accent-foreground: #3f3f47;
-  --sidebar-border:            #e4e4e7;
-  --sidebar-ring:              #196262;
+  --sidebar-accent:            rgba(255,255,255,0.06);
+  --sidebar-accent-foreground: #f0f0f8;
+  --sidebar-border:            rgba(255,255,255,0.06);
+  --sidebar-ring:              #7c3aed;
 
   /* ═══════════════════════════════════════════════════════════
-     SHADOW TOKENS
+     SHADOW TOKENS — Midjourney-style colored glows on dark
      ═══════════════════════════════════════════════════════════ */
-  /* Layered shadows — lighter for white theme.
-     Inset hairline now uses dark rgba (not white) to simulate a subtle
-     border edge on white/light surfaces. Vercel light-mode shadow principle. */
-  --shadow-xs:  0 1px 2px rgba(0,0,0,0.06),
-                inset 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-sm:  0 2px 4px rgba(0,0,0,0.08),
-                0 1px 2px rgba(0,0,0,0.05),
-                inset 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-md:  0 4px 8px rgba(0,0,0,0.10),
-                0 2px 4px rgba(0,0,0,0.06),
-                inset 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,0.12),
-                0 4px 8px rgba(0,0,0,0.08),
-                inset 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-xl:  0 16px 40px rgba(0,0,0,0.15),
-                0 8px 16px rgba(0,0,0,0.10),
-                inset 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-primary: 0 4px 20px rgba(25,98,98,0.22), 0 2px 8px rgba(25,98,98,0.12);
-  --shadow-accent:  0 4px 16px rgba(237,128,32,0.25);
-  --shadow-brand:   0 4px 16px rgba(59,207,207,0.28);
-  --shadow-violet:  0 4px 16px rgba(124,58,237,0.20);
-  --shadow-teal:    0 4px 16px rgba(46,196,169,0.20);
+  --shadow-xs:  0 1px 2px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+  --shadow-sm:  0 2px 6px rgba(0,0,0,0.5),
+                0 1px 2px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.55),
+                0 2px 4px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-lg:  0 8px 28px rgba(0,0,0,0.60),
+                0 4px 8px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,0.70),
+                0 8px 16px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Colored button glows — the Midjourney signature */
+  --shadow-primary:
+    0 0 0 1px rgba(124,58,237,0.30),
+    0 4px 20px rgba(124,58,237,0.45),
+    0 1px 4px rgba(0,0,0,0.70),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  --shadow-primary-hover:
+    0 0 0 1px rgba(124,58,237,0.45),
+    0 6px 28px rgba(124,58,237,0.62),
+    0 2px 6px rgba(0,0,0,0.60),
+    inset 0 1px 0 rgba(255,255,255,0.13);
+  --shadow-accent:
+    0 0 0 1px rgba(237,128,32,0.30),
+    0 4px 16px rgba(237,128,32,0.40),
+    0 1px 4px rgba(0,0,0,0.70),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  --shadow-accent-hover:
+    0 0 0 1px rgba(237,128,32,0.45),
+    0 6px 22px rgba(237,128,32,0.55),
+    0 2px 6px rgba(0,0,0,0.60),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  --shadow-brand:
+    0 0 0 1px rgba(59,207,207,0.28),
+    0 4px 16px rgba(59,207,207,0.38),
+    0 1px 4px rgba(0,0,0,0.70),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  --shadow-brand-hover:
+    0 0 0 1px rgba(59,207,207,0.42),
+    0 6px 22px rgba(59,207,207,0.52),
+    0 2px 6px rgba(0,0,0,0.60),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+  --shadow-violet:
+    0 0 0 1px rgba(124,58,237,0.25),
+    0 4px 16px rgba(124,58,237,0.35);
+  --shadow-teal:
+    0 0 0 1px rgba(46,196,169,0.25),
+    0 4px 16px rgba(46,196,169,0.35);
 
   /* ═══════════════════════════════════════════════════════════
      MOTION TOKENS
@@ -484,7 +514,7 @@
   }
 
   html {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
@@ -532,8 +562,8 @@
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--forest-400) 35%, transparent);
-    color: var(--ink-0);
+    background: color-mix(in srgb, var(--violet-500) 40%, transparent);
+    color: #ffffff;
   }
 
   :focus-visible {
@@ -554,106 +584,105 @@
      Page/section backgrounds. Very subtle tints on white canvas.
   ──────────────────────────────────────────────────────────── */
 
-  /* Barely-there green at top — hero, auth screens */
+  /* Subtle violet glow at top — hero, auth screens */
   .gradient-hero {
     background:
       radial-gradient(ellipse 80% 50% at 50% -10%,
-        rgba(19, 52, 41, 0.07) 0%,
+        rgba(124, 58, 237, 0.12) 0%,
         transparent 70%
       ),
-      #ffffff;
+      #0d0d12;
   }
 
-  /* Corner green ambient — dashboard, app shell */
+  /* Corner violet/indigo ambient — dashboard, app shell */
   .gradient-ambient-green {
     background:
-      radial-gradient(ellipse 55% 60% at 0% 100%, rgba(19, 52, 41, 0.05) 0%, transparent 70%),
-      radial-gradient(ellipse 35% 35% at 100% 0%, rgba(63, 187, 94, 0.04) 0%, transparent 60%),
-      #ffffff;
+      radial-gradient(ellipse 55% 60% at 0% 100%, rgba(124, 58, 237, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 35% 35% at 100% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 60%),
+      #0d0d12;
   }
 
   /* Multi-colour ambient — richer sections */
   .gradient-ambient-multi {
     background:
-      radial-gradient(ellipse 50% 55% at 10% 90%, rgba(19, 52, 41, 0.05) 0%, transparent 65%),
-      radial-gradient(ellipse 40% 40% at 90% 10%, rgba(30, 58, 172, 0.04) 0%, transparent 60%),
-      radial-gradient(ellipse 25% 25% at 55% 45%, rgba(124, 58, 237, 0.02) 0%, transparent 100%),
-      #ffffff;
+      radial-gradient(ellipse 50% 55% at 10% 90%, rgba(124, 58, 237, 0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 40% at 90% 10%, rgba(59, 207, 207, 0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 25% 25% at 55% 45%, rgba(124, 58, 237, 0.04) 0%, transparent 100%),
+      #0d0d12;
   }
 
   /* ── Surface / card fills ─────────────────────────────────
-     Light tinted fills for semantic card panels.
+     Dark-themed tinted fills for semantic card panels.
   ──────────────────────────────────────────────────────────── */
 
-  /* Neutral surface — subtle card depth */
+  /* Neutral surface — subtle depth on dark */
   .gradient-surface {
-    background: linear-gradient(160deg, #f4f4f5 0%, #fafafa 100%);
+    background: linear-gradient(160deg, #1a1a22 0%, #16161e 100%);
   }
 
   /* Emerald — primary/success panels */
   .gradient-emerald {
     background: linear-gradient(145deg,
-      var(--forest-100) 0%,
-      var(--forest-50)  55%,
-      #ffffff 100%
+      rgba(59,207,207,0.10) 0%,
+      rgba(59,207,207,0.04) 100%
     );
   }
 
   /* Cobalt — info/link panels */
   .gradient-cobalt {
     background: linear-gradient(145deg,
-      var(--cobalt-100) 0%,
-      var(--cobalt-50)  100%
+      rgba(80,131,222,0.10) 0%,
+      rgba(80,131,222,0.04) 100%
     );
   }
 
   /* Ember — warning/accent panels */
   .gradient-ember {
     background: linear-gradient(145deg,
-      var(--ember-100) 0%,
-      var(--ember-50)  100%
+      rgba(237,128,32,0.10) 0%,
+      rgba(237,128,32,0.04) 100%
     );
   }
 
   /* Violet — AI confidence, stats panels */
   .gradient-violet {
     background: linear-gradient(145deg,
-      var(--violet-100) 0%,
-      var(--violet-50)  100%
+      rgba(124,58,237,0.12) 0%,
+      rgba(124,58,237,0.05) 100%
     );
   }
 
   /* Teal — live/real-time panels */
   .gradient-teal {
     background: linear-gradient(145deg,
-      var(--teal-100) 0%,
-      var(--teal-50)  100%
+      rgba(46,196,169,0.10) 0%,
+      rgba(46,196,169,0.04) 100%
     );
   }
 
   /* Rose — failure/negative panels */
   .gradient-rose {
     background: linear-gradient(145deg,
-      var(--rose-100) 0%,
-      var(--rose-50)  100%
+      rgba(224,51,96,0.12) 0%,
+      rgba(224,51,96,0.05) 100%
     );
   }
 
-  /* ── Text gradients (darker for white bg contrast) ─────── */
+  /* ── Text gradients (light/vibrant for dark bg) ─────────── */
   .gradient-text-green {
-    background: linear-gradient(90deg, var(--forest-700), var(--forest-500));
+    background: linear-gradient(90deg, var(--forest-300), var(--forest-400));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .gradient-text-gold {
-    background: linear-gradient(90deg, var(--ember-700), var(--ember-500));
+    background: linear-gradient(90deg, var(--ember-300), var(--ember-400));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .gradient-text-violet {
-    background: linear-gradient(90deg, var(--violet-700), var(--cobalt-600));
+    background: linear-gradient(90deg, var(--violet-300), var(--cobalt-300));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -753,9 +782,9 @@
   .motion-shimmer {
     background: linear-gradient(
       90deg,
-      #f4f4f5 25%,
-      #e9e9ec 50%,
-      #f4f4f5 75%
+      #1a1a24 25%,
+      #222230 50%,
+      #1a1a24 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s var(--ease-default) infinite;

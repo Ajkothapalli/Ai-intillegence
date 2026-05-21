@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
   [
-    'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full',
+    'group/button inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl',
     'text-sm font-semibold whitespace-nowrap select-none',
-    'outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/20 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
-    'disabled:pointer-events-none disabled:opacity-40',
+    'outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]',
+    'disabled:pointer-events-none disabled:opacity-35',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
     'transition-[color,background-color,border-color,box-shadow,transform,opacity]',
     'duration-150 [transition-timing-function:var(--ease-default)]',
@@ -16,39 +16,49 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        /* #133429 filled — primary action */
+        /* Violet filled — Midjourney-style glow shadow */
         default:
-          'bg-primary text-primary-foreground shadow-[var(--shadow-sm)]' +
-          ' hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-primary)]' +
+          'bg-primary text-primary-foreground shadow-[var(--shadow-primary)]' +
+          ' hover:bg-[var(--primary-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-primary-hover)]' +
           ' active:bg-[var(--primary-active)] active:translate-y-0',
-        /* Forest tint bg + forest border + dark forest text */
+
+        /* Dark glass — semi-transparent surface with depth shadow */
         secondary:
-          'bg-[var(--forest-50)] border border-[var(--forest-200)] text-[var(--forest-700)]' +
-          ' hover:bg-[var(--forest-100)] hover:border-[var(--forest-300)] hover:text-[var(--forest-800)] hover:-translate-y-px' +
-          ' active:bg-[var(--forest-100)] active:translate-y-0',
-        /* Solid bright green — strong CTA */
+          'bg-white/7 border border-white/10 text-foreground' +
+          ' shadow-[0_1px_3px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]' +
+          ' hover:bg-white/11 hover:border-white/16 hover:-translate-y-px' +
+          ' hover:shadow-[0_2px_8px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.08)]' +
+          ' active:translate-y-0',
+
+        /* Bright teal accent — Midjourney brand glow */
         brand:
-          'bg-[var(--brand)] text-[var(--brand-foreground)] shadow-[var(--shadow-sm)]' +
-          ' hover:bg-[var(--brand-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-brand)]' +
+          'bg-[var(--brand)] text-[var(--brand-foreground)] shadow-[var(--shadow-brand)]' +
+          ' hover:bg-[var(--brand-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-brand-hover)]' +
           ' active:translate-y-0',
-        /* Ember orange — accent CTA */
+
+        /* Ember orange — accent CTA glow */
         accent:
-          'bg-accent text-accent-foreground shadow-[var(--shadow-sm)]' +
-          ' hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-accent)]' +
+          'bg-accent text-accent-foreground shadow-[var(--shadow-accent)]' +
+          ' hover:bg-[var(--accent-hover)] hover:-translate-y-px hover:shadow-[var(--shadow-accent-hover)]' +
           ' active:translate-y-0',
-        /* Ghost — transparent, no lift */
+
+        /* Ghost — no background, subtle hover fill */
         ghost:
-          'text-[var(--foreground-muted)] hover:bg-[var(--background-elevated)] hover:text-foreground',
-        /* Outline — subtle lift */
+          'text-[var(--foreground-muted)] hover:bg-white/6 hover:text-foreground',
+
+        /* Outline — thin border, glass hover */
         outline:
-          'border border-[var(--border)] text-foreground bg-white' +
-          ' hover:bg-[var(--background-elevated)] hover:border-[var(--border-strong)] hover:-translate-y-px' +
+          'border border-white/12 text-foreground bg-transparent' +
+          ' hover:bg-white/6 hover:border-white/20 hover:-translate-y-px' +
           ' active:translate-y-0',
+
         /* Destructive */
         destructive:
-          'bg-[var(--rose-50)] text-[var(--rose-700)] border border-[var(--rose-200)] hover:bg-[var(--rose-100)]',
+          'bg-[rgba(224,51,96,0.12)] text-[var(--rose-400)] border border-[rgba(224,51,96,0.20)]' +
+          ' hover:bg-[rgba(224,51,96,0.18)] hover:border-[rgba(224,51,96,0.30)]',
+
         /* Link */
-        link: 'text-[var(--forest-700)] underline-offset-4 hover:underline p-0 h-auto',
+        link: 'text-[var(--link)] underline-offset-4 hover:underline hover:text-[var(--link-hover)] p-0 h-auto',
       },
       size: {
         xs:       'h-7 px-2.5 text-xs',
